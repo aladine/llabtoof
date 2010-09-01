@@ -57,7 +57,7 @@ struct player_infos_bf {
 
 struct player_struct
 {
-      struct player_infos_bf;
+      struct player_infos_bf infos;
       char general_bf;
       unsigned short int x __attribute__ ((aligned (16)));
       unsigned short int y __attribute__ ((aligned (16)));
