@@ -46,6 +46,25 @@ Assumptions : players positions are defined by 16-bit unsigned integers
 
 The total size of the structure would be 48bits (6 bytes).
 
+A C implementation of this structure would be :
+{{{
+struct player_infos_bf {
+    unsigned char num : 4;
+    unsigned char team : 1;
+    unsigned char has_ball : 1;
+    : 2; //padding to get 8 bits
+};
+
+struct player_struct
+{
+      struct player_infos_bf;
+      char general_bf;
+      unsigned short int x __attribute__ ((aligned (16)));
+      unsigned short int y __attribute__ ((aligned (16)));
+} __attribute__((__packed__));
+
+}}}
+
 == Game state ==
 
 The game state is basically the state of all the players and the state off the ball.
