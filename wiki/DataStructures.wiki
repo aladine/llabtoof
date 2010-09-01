@@ -15,7 +15,7 @@ AB : The data structure that will represent a player state (position etc.) will 
 Assumptions : players positions are defined by 16-bit unsigned integers
 (WARNING : MicroBlaze uses Big-Endian)
 
-|| Bits || 0 to 7 || 8 to 16 ||
+|| Bits || 0 to 7 || 8 to 15 ||
 || 0    || infos_bf  || general_bf ||
 || 16   || position_x (high)  || position_x (low)  ||
 || 32   || position_y (high)  || position_y (low)  ||
