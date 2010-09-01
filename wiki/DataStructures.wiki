@@ -15,10 +15,24 @@ AB : The data structure that will represent a player state (position etc.) will 
 Assumptions : players positions are defined by 16-bit unsigned integers
 (WARNING : MicroBlaze uses Big-Endian)
 
-|| Bits || 0 to 7 || 8 to 15 ||
-|| 0    || infos_bf  || general_bf ||
-|| 16   || position_x (high)  || position_x (low)  ||
-|| 32   || position_y (high)  || position_y (low)  ||
+<table border="1" cellspacing="0">
+<tr>
+<th>Bit offset</th><th>0</th><th>1</th><th>2</th><th>3</th><th>4</th><th>5</th><th>6</th><th>7</th><th>8</th><th>9</th><th>10</th><th>11</th><th>12</th><th>13</th><th>14</th><th>15</th>
+</tr>
+<tr>
+<td><b>0</b></td>
+<td colspan="8" align="center">infos_bf</td>
+<td colspan="8" align="center">general_bf</td>
+</tr>
+<tr>
+<td><b>16</b></td>
+<td colspan="16" align="center">position_x</td>
+</tr>
+<tr>
+<td><b>32</b></td>
+<td colspan="16" align="center">position_y</td>
+</tr>
+</table>
 
 *infos_bf* : the following bit-field :
 
@@ -31,3 +45,7 @@ Assumptions : players positions are defined by 16-bit unsigned integers
 *general_bf* : general purpose bit-field that may be use  to easily transmit informations about players between different parts of a single board; for instance this bit-field may be use by the strategy part to remember which player is a defender, an attacker etc.
 
 The total size of the structure would be 48bits (6 bytes).
+
+== Game state ==
+
+The game state is basically the state of all the players and the state off the ball.
