@@ -10,7 +10,7 @@ If you want to use new data structures that may be shared between different part
 
 == Player state ==
 
-AB : The data structure that will represent a player state (position etc.) will probably be used a lot across the project. We don't need to share this structure between server and client but I guess it would be a "good practice" to do so. Since be don't know all the details of the project constraints, this proposal may change in a near future. Please change this proposal if you have a better proposition.
+AB : The data structure that will represent a player state (position etc.) will probably be used a lot across the project. We don't need to share this structure between server and client but I guess it would be a "good practice" to do so. Since we don't know all the details of the project constraints, this proposal may change in a near future. Please change this proposal if you have a better proposition.
 
 Assumptions : players positions are defined by 16-bit unsigned integers
 (WARNING : MicroBlaze uses Big-Endian)
