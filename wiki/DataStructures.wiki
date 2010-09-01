@@ -1,0 +1,33 @@
+#summary Description of different data structures used by server and client
+#labels Phase-Design
+
+= Introduction =
+
+This page describes different data structures used by server and client
+If you want to use new data structures that may be shared between different parts of the project, please describe them here.
+
+= Details =
+
+== Player state ==
+
+AB : The data structure that will represent a player state (position etc.) will probably be used a lot across the project. We don't need to share this structure between server and client but I guess it would be a "good practice" to do so. Since be don't know all the details of the project constraints, this proposal may change in a near future. Please change this proposal if you have a better proposition.
+
+Assumptions : players positions are defined by 16-bit unsigned integers
+(WARNING : MicroBlaze uses Big-Endian)
+
+|| Bits || 0 to 7 || 8 to 16 ||
+|| 0    || infos_bf  || general_bf ||
+|| 16   || position_x (high)  || position_x (low)  ||
+|| 32   || position_y (high)  || position_y (low)  ||
+
+infos_bf : the following bit-field :
+
+|| bit || description ||
+|| 0 - 3  || Integer : player number (1 to 5) ||
+|| 4 || Boolean : team (0 or 1) ||
+|| 5 || Boolean : player has the ball ||
+|| 6-7 || unused
+
+general_bf : general purpose bit-field that may be use  to easily transmit informations about players between different parts of a single board; for instance this bit-field may be use by the strategy part to remember which player is a defender, an attacker etc.
+
+The total size of the structure would be 48bits (6 bytes).
