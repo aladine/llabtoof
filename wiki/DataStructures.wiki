@@ -26,7 +26,7 @@ infos_bf : the following bit-field :
 || 0 - 3  || Integer : player number (1 to 5) ||
 || 4 || Boolean : team (0 or 1) ||
 || 5 || Boolean : player has the ball ||
-|| 6-7 || unused
+|| 6-7 || unused ||
 
 general_bf : general purpose bit-field that may be use  to easily transmit informations about players between different parts of a single board; for instance this bit-field may be use by the strategy part to remember which player is a defender, an attacker etc.
 
