@@ -6,7 +6,7 @@
 This page describes different data structures used by server and client
 If you want to use new data structures that may be shared between different parts of the project, please describe them here.
 
-= Details =
+= Content =
 
 == Player state ==
 
