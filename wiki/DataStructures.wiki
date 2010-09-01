@@ -20,7 +20,7 @@ Assumptions : players positions are defined by 16-bit unsigned integers
 || 16   || position_x (high)  || position_x (low)  ||
 || 32   || position_y (high)  || position_y (low)  ||
 
-infos_bf : the following bit-field :
+*infos_bf* : the following bit-field :
 
 || bit || description ||
 || 0 - 3  || Integer : player number (1 to 5) ||
@@ -28,6 +28,6 @@ infos_bf : the following bit-field :
 || 5 || Boolean : player has the ball ||
 || 6-7 || unused ||
 
-general_bf : general purpose bit-field that may be use  to easily transmit informations about players between different parts of a single board; for instance this bit-field may be use by the strategy part to remember which player is a defender, an attacker etc.
+*general_bf* : general purpose bit-field that may be use  to easily transmit informations about players between different parts of a single board; for instance this bit-field may be use by the strategy part to remember which player is a defender, an attacker etc.
 
 The total size of the structure would be 48bits (6 bytes).
