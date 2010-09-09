@@ -3,15 +3,19 @@
 
 = Controller =
 
-How to calculate the direction of the ball: given *(x,y)* and *speed*
+How to calculate the direction of the ball when player wants to kick: given *(x,y)* and *speed*
 
 Thread management and priority queue implementation.
+
+Simple actions: kick, pass the ball, ...
 
 = Server =
 
 Display on the screen through VGA .Ex: lab0
 
 Assume several states of the game. 
+
+Shared resources.
 
 = Communication UART =
 
