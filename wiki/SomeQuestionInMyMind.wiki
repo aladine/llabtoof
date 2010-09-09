@@ -1,0 +1,18 @@
+#summary Some questions need to be resolved soon
+#labels Phase-Design
+
+= Controller =
+
+How to calculate the direction of the ball: given *(x,y)* and *speed*
+
+Thread management and priority queue implementation.
+
+= Server =
+
+Display on the screen through VGA .Ex: lab0
+
+Assume several states of the game. 
+
+= Communication UART =
+
+Any idea. The most important part of communication between server and client
