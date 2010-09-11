@@ -1,0 +1,18 @@
+#summary One-sentence summary of this page.
+
+= Introduction =
+
+Get started on any PI API coding.
+
+
+= Details =
+Anybody have problem using some of the MicroBlaze hardware component PIs, just log on to the following page, search the solution:
+{{{
+http://forums.xilinx.com/t5/Embedded-Solutions/ct-p/EMBED
+}}}
+or refer to the API document in this location:
+{{{
+file:///D:/Xilinx/12.1/ISE_DS/EDK/sw/XilinxProcessorIPLib/drivers/(x)/doc/html/api/
+}}}
+Where (x) is the PI unit name which you wanna get reference document.
+Remember focus on API not hardware.
