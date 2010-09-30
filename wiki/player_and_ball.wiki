@@ -1,0 +1,13 @@
+//draw player
+col= 0x00ffffff;
+  XTft_DrawSolidBox(&TftInstance,   x-3, y-1, x+3,y+1,col); // white
+  XTft_DrawSolidBox(&TftInstance,   x-1, y-3, x+1,y+3,col); // white
+	XTft_SetPixel(&TftInstance, x+2, y+2, col);
+	XTft_SetPixel(&TftInstance, x-2, y-2, col);
+	XTft_SetPixel(&TftInstance, x-2, y+2, col);
+	XTft_SetPixel(&TftInstance, x+2, y-2, col);
+
+//draw ball
+col= 0x00ffffff;
+  XTft_DrawSolidBox(&TftInstance,   x-2, y-1, x+2,y+1,col); // white
+  XTft_DrawSolidBox(&TftInstance,   x-1, y-2, x+1,y+2,col); // white
