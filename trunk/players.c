@@ -1,59 +1,56 @@
-/*				* Players.c *
-*This file represents the Team controllers in the project.
-*What I(Per) have done so far is: 
-*Taken the code from lab2 and added to/edited it. 
-*I have added another thread as player 5. 
-*I have created a struct for the players that contain all the different bitsequences(e.g team_id) (given to us in the communication datasheet 
- here: http://wiki.nus.edu.sg/display/ee4214/Communication+Protocol+and+Other+Details ) and implemented them as members in the struct.
-*I created an array(5x32) that can store all the comm.bits. I'm thinking that the playerthreads can work with the struct, and then 
- update the array with the member data. Then the communication part have to tranfer this info to the server. I'm wondering if we should use
- two arrays, one for incoming and one for outgoing traffic or just use one with mutexes or something. Anyway my plan was just to implement 
- something real simple at first to test communication and the simplest possible positioning/movement of the players. The simplest 
- tactic would just be to make all the players run towards the ball.
-*I have made each player create their own struct.
-*I have made a function that initializes position. Currently its the only thing the players do. I tried to make them position
- themselves in a straight line at the halfway line.
-*More comments and explanation is commented in the code.
- 
-TODO :	Fix all my mistakes.
-			Write a function that takes the struct info and puts it into the bitarray, in the correct order.
-			Establish communication by using uartlite API, rightclick the RS2323 in the system assembly view to find the API.
-			(could for example transfer one line of the array at the time)
-			Fix thread priorities. Currently player1 has top priority and player5 the lowest.
-			Create function that move players towards the ball.
-			Expand on stuff until it resembles a tactic ^^.
-			Lots more.
-*/
+/* players.c - represents the Team controllers in the project.
+ * 
+ * Copyright 2010 Per Kristian Kjoell <a0075664@nus.edu.sg>
+ * 
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ * 
+ * 		http://www.apache.org/licenses/LICENSE-2.0
+ * 
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ * 
+ * What I(Per) have done so far is: 
+ *  -Taken the code from lab2 and added to/edited it. 
+ *  -I have added another thread as player 5. 
+ *  -I have created a struct for the players that contain all the different bitsequences(e.g team_id) (given to us in the communication datasheet 
+ * here: http://wiki.nus.edu.sg/display/ee4214/Communication+Protocol+and+Other+Details ) and implemented them as members in the struct.
+ *  -I created an array(5x32) that can store all the comm.bits. I'm thinking that the playerthreads can work with the struct, and then 
+ * update the array with the member data. Then the communication part have to tranfer this info to the server. I'm wondering if we should use
+ * two arrays, one for incoming and one for outgoing traffic or just use one with mutexes or something. Anyway my plan was just to implement 
+ * something real simple at first to test communication and the simplest possible positioning/movement of the players. The simplest 
+ * tactic would just be to make all the players run towards the ball.
+ *  -I have made each player create their own struct.
+ *  -I have made a function that initializes position. Currently its the only thing the players do. I tried to make them position
+ * themselves in a straight line at the halfway line.
+ *  -More comments and explanation is commented in the code.
+ * 
+ * 
+ * TODO :	Fix all my mistakes.
+ * 			Write a function that takes the struct info and puts it into the bitarray, in the correct order.
+ * 			Establish communication by using uartlite API, rightclick the RS2323 in the system assembly view to find the API.
+ * 			(could for example transfer one line of the array at the time)
+ * 			Fix thread priorities. Currently player1 has top priority and player5 the lowest.
+ * 			Create function that move players towards the ball.
+ * 			Expand on stuff until it resembles a tactic ^^.
+ * 			Lots more.
+ */
 
 #include "xmk.h"
 #include <xparameters.h>
 #include <pthread.h>
 #include <errno.h>
-
+#include "structures.h"
 
 struct sched_param sched_par;
 pthread_attr_t attr; // I think this atttrbute is used to give threads different priorities. Taken from lab2.
 pthread_t tid1, tid2, tid3, tid4, tid5;
 
-/*DATA STRUCTURE FOR THE PLAYERS. The structure members are based on the communication protocol given to us.
-* Im thinking that each player should be able to change his values, and then a specific function can be written that
-* takes the structure and converts into a 32bit vector like in the communication protocol. This vector will then be
-* sent to the server.
-*/
-struct player {
-	// Variables used in packet from player/client to server
-	// Used in both packet types :
-	unsigned char packet_type; // 1 = Initial position packet. 0 = update packet.
-	unsigned char team_id; // 0 = Team A, 1 = Team B
-	unsigned char player_id[4];
-	//Used in initial position packet only: 
-	unsigned char x_pos[10];
-	unsigned char y_pos[10];
-	//Used in update(position) packet only:
-	unsigned char kick_or_move; // 1 = kick, 0 = movement.
-	unsigned char direction[4];
-	unsigned char speed[4];
-};
+
 
 // Create an array that contains 5 player communication vectors, each with 32 bit. Player 1 is in player_array[0][x] etc.
 // Each thread will save the structure members to the correct bitpositions in this array, corresponding to the communication protocol given.
