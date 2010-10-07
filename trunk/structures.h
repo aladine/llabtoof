@@ -22,17 +22,32 @@
 * takes the structure and converts into a 32bit vector like in the communication protocol. This vector will then be
 * sent to the server.
 */
-struct player {
-	// Variables used in packet from player/client to server
-	// Used in both packet types :
-	unsigned char packet_type; // 1 = Initial position packet. 0 = update packet.
-	unsigned char team_id; // 0 = Team A, 1 = Team B
-	unsigned char player_id[4];
-	//Used in initial position packet only: 
-	unsigned char x_pos[10];
-	unsigned char y_pos[10];
-	//Used in update(position) packet only:
-	unsigned char kick_or_move; // 1 = kick, 0 = movement.
-	unsigned char direction[4];
-	unsigned char speed[4];
+
+#define NO_KICK -1
+
+struct player
+{
+	unsigned x_pos, y_pos;
+	unsigned char direction;
+	unsigned char speed;
 };
+
+struct ball
+{
+	unsigned  x_pos, y_pos;
+	unsigned char direction;
+	unsigned char speed;
+}
+
+struct game_state
+{
+	struct ball ball_state;
+	struct player players[5];
+	struct player players_others[5];
+}
+
+//
+
+
+
+
