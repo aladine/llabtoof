@@ -4,6 +4,7 @@
 #include "display.h"
 #include "stdio.h"
 #include "stdlib.h"
+#include "math.h"
 
 #define TFT_DEVICE_ID XPAR_XPS_TFT_0_DEVICE_ID
 
@@ -16,34 +17,25 @@
 static XTft TftInstance;
 
 
-//Struct
+/*Struct
+x, y: get value from (0,0) to (600,400) . We only convert to (20,40) ->(620,440) 
+to send to UART as suggested by lecturer at the communication part with UART
+dir: 0 to 15
+speed: 0 , 5, ... 100
+*/
 
 struct ball_t {
-  
-			unsigned char x[10];
-			unsigned char y[10];      
-        unsigned char dir[4];
-        unsigned char speed[4];
-
+  int x,y,dir,speed;
+	
 };
 
 struct player_t { 
- 		unsigned char x[10];
-			unsigned char y[10];
-        
-       //unsigned char kick_or_move; // 1 = kick, 0 = movement.
-        unsigned char dir[4];
-        unsigned char speed[4];
+  int x,y,dir,speed;
 };
 
-int val(unsigned char y[10])
-{
-return (y[0]*512 + y[1]*256 + y[2]*128 + y[3]*64 + y[4]*32 + y[5]*16 + y[6]*8 + y[7]*4 + y[8]*2 + y[9])  ;
-}
+/*Physical rules:*/
 
-//Physical rules:
-
-//get a randome position in the center circle
+/*get a randome position in the center circle*/
 int random_num(int *x, int *y){
 	while(1){
 	x=rand()%100 + 1;
@@ -52,32 +44,32 @@ int random_num(int *x, int *y){
 	}
 }
 
-//check anything in the field
+/*check anything in the field*/
 int in_border(int x, int y){
 	if((x>=0) && (x<=600) && (y>=0) && (y<=400) && (x+y>=20) && (600-x+y>=20) && (600-x+400-y>=20) && (x+400-y>=20)) return 1;
 	return 0;
   	
 }
-//check the player in the field
+/*check the player in the field*/
 int in_border_player(int x, int y){
 	if((x>=7) && (x<=600-7) && (y>=7) && (y<=400-7) && (x+y>=30) && (600-x+y>=30) && (600-x+400-y>=30) && (x+400-y>=30)) return 1;
 	return 0;
   	
 }
 
-//check the ball in the field
+/*check the ball in the field*/
 int in_border_ball(int x, int y){
 	if((x>=5) && (x<=600-5) && (y>=5) && (y<=400-5) && (x+y>=28) && (600-x+y>=28) && (600-x+400-y>=28) && (x+400-y>=28)) return 1;	return 0;
   	
 }
 
-float distance_sq(struct player_t player,struct ball_t ball){
-	return ((val(player.x)-val(ball.x))*(val(player.x)-val(ball.x))+ (val(player.y)-val(ball.y))*(val(player.y)-val(ball.y)));
+float distance(struct player_t player,struct ball_t ball){
+	return sqrt((player.x-ball.x)*(player.x-ball.x)+ (player.y-ball.y)*(player.y-ball.y));
 }
 
-//check if the player possess the ball
+/*check if the player possess the ball*/
 int possess_ball(struct player_t player,struct ball_t ball){
-	if (distance_sq(player,ball)<=225)
+	if (distance(player,ball)<=15)
 	return 1;
 	else return 0;
 }
@@ -92,21 +84,21 @@ int possess_ball(struct player_t player,struct ball_t ball){
 int check_contact(struct player_t *player,struct ball_t *ball){
 	if (possess_ball(*player,*ball)==1)
 	{
-	/* ERROR HERE. I NEED HELP
-	if(player->speed=={0,0,0,0}){
-		ball->dir[0]=1- ball->dir[0];
+
+	if(player->speed==0){
+		ball->dir[0]=(ball->dir[0]+8) % 16;
 	}else{
-		ball->speed <<= player->speed;(SHIFT OPERATOR)
+		ball->speed = 2* player->speed;
 		ball->dir=player->dir;
 	}
-	*/
+
 	return 1;
 	}
 	
 	return 0;
 }
 
-//Check when the ball arrive and bounce to the wall
+/*Check when the ball arrive and bounce to the wall*/
 int check_bounce(int x, int y){
 	if((x==5) || (x==600-5)) return 1;
 	if((y==5) || (y==400-5)) return 2;
@@ -116,18 +108,18 @@ return 0;
 }
 
 void bounce(struct ball_t *ball){
-	switch (check_bounce(val(ball->x), val(ball->y))){
+	switch (check_bounce(ball->x,ball->y)){
 	case 1:
-		//ball->speed = 8 - ball->speed;
+		ball->speed = (8 - ball->speed) %16;
 		break;
 	case 2:
-		//ball->speed = 16 - ball->speed;
+		ball->speed = (16 - ball->speed) %16;
 		break;
 	case 3:
-		//ball->speed = 12 - ball->speed;
+		ball->speed = (12 - ball->speed) %16;
 		break;
 	case 4:
-		//ball->speed = 4 - ball->speed;
+		ball->speed = (4 - ball->speed) %16;
 		break;
 	default:	
 		break;
@@ -137,7 +129,7 @@ void bounce(struct ball_t *ball){
 }
 
 
-//main function
+/*main function*/
 
 int main(){
 
@@ -174,14 +166,14 @@ int main(){
   XTft_SetColor(&TftInstance, 0, 0);
   XTft_ClearScreen(&TftInstance);
 
-//Draw border, center circle
+/*Draw border, center circle */
 Init(&TftInstance);
  
- //Waiting for data from Mailbox
-//Get initialized position of players  and display
-//Generate random_number posistion of ball and send back to mail box
-// Change game state to "BEGINING"
-//Using timer to update the screen.
+/*Waiting for data from Mailbox
+*Get initialized position of players  and display
+*Generate random_number posistion of ball and send back to mail box
+* Change game state to "BEGINING"
+*Using timer to update the screen.*/
 
   xil_printf("  TFT test completed!\r\n");
     
