@@ -46,8 +46,7 @@ struct game_state
 	struct player players_others[5];
 }
 
-//
-
-
-
+typedef struct player Player;
+typedef struct ball Ball;
+typedef struct game_state GameState;
 
