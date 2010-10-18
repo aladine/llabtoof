@@ -10,9 +10,9 @@
 #define RED 0x00ff0000
 #define BLUE 0x000000ff
 #define WHITE 0x00ffffff
-  
+#define BLACK 0x00000000  
 
-static XTft TftInstance;
+
 
 //to shift value of x on display
 int X(int x){
@@ -24,45 +24,28 @@ int Y(int y){
 	return y+40;
 }
 
-int XTft_DrawSolidBox(XTft *Tft, int x1, int y1, int x2, int y2, unsigned int col)
-{
-   int xmin,xmax,ymin,ymax,i,j;
 
-   if (x1 >= 0 &&
-       x1 <= DISPLAY_COLUMNS-1 &&
-       x2 >= 0 &&
-       x2 <= DISPLAY_COLUMNS-1 &&
-       y1 >= 0 &&
-       y1 <= DISPLAY_ROWS-1 &&
-       y2 >= 0 &&
-       y2 <= DISPLAY_ROWS-1) {
-      if (x2 < x1) {
-         xmin = x2;
-         xmax = x1;
-      }
-      else {
-         xmin = x1;
-         xmax = x2;
-      }
-      if (y2 < y1) {
-         ymin = y2;
-         ymax = y1;
-      }
-      else {
-         ymin = y1;
-         ymax = y2;
-      }
+void display_score(XTft *Tft,int scoreA,int foulA, int scoreB, int foulB){
+  XTft_SetPosChar(Tft, 20,270);
+  XTft_SetColor(Tft, WHITE,RED);
+  TftWriteString(Tft, (u8*)"SCORE: \n"+scoreA);
+  TftWriteString(Tft, (u8*)"FOULS: \n"+foulA);
 
-      for (i=xmin; i<=xmax; i++) {
-         for (j=ymin; j<=ymax; j++) {
-	   XTft_SetPixel(Tft, i, j, col);
-         }
-      }	   XTft_SetPixel(Tft, i, j, col);
-      return 0;
-   }
-   return 1;
+  XTft_SetPosChar(Tft, 600,270);
+  XTft_SetColor(Tft, WHITE,RED);
+  TftWriteString(Tft, (u8*)"SCORE: \n"+scoreB);
+  TftWriteString(Tft, (u8*)"FOULS: \n"+foulB);
 
 }
+
+
+/*display time counting down 3 2 1*/
+void count_down(int count){
+  XTft_SetPosChar(Tft, 300,10);
+  XTft_SetColor(Tft, WHITE,BLACK);
+  TftWriteString(Tft, (u8*)"START... \n"+count);
+}
+
 
 int Draw_Player(XTft *Tft, int x, int y,unsigned int col){
 	XTft_DrawSolidBox(Tft,x-7,y+1,x+7,y-1,col);
@@ -89,8 +72,8 @@ int Draw_Border(XTft *Tft){
 	TftDrawLine(Tft,600,440,620,420,WHITE);
 	XTft_DrawSolidBox(Tft,0,210,20,270,GREEN);
 	XTft_DrawSolidBox(Tft,620,210,640,270,GREEN);
-	XTft_DrawSolidBox(Tft,20,190,70,290,RED);
-	XTft_DrawSolidBox(Tft,570,190,620,290,RED);
+	XTft_DrawSolidBox(Tft,620,210,630,270,RED);
+	XTft_DrawSolidBox(Tft,620,210,630,270,RED);
 
 }
 
@@ -133,6 +116,60 @@ Draw_Border(TftInstance);
 //Draw_Player(TftInstance,300,300,RED);
 //Draw_Ball(TftInstance,400,400,RED);
 Draw_Circle(TftInstance,GREEN);
+}
+
+/*
+	 * Writes a character from the string to the screen
+	 * until it reaches null or end of the string.
+ */
+ int TftWriteString(XTft *InstancePtr, const u8 *CharValue)
+{	
+	while (*CharValue != 0) {
+		XTft_Write(InstancePtr, *CharValue);
+		CharValue++;
+	}
+
+	return XST_SUCCESS;
+}
+
+int XTft_DrawSolidBox(XTft *Tft, int x1, int y1, int x2, int y2, unsigned int col)
+{
+   int xmin,xmax,ymin,ymax,i,j;
+
+   if (x1 >= 0 &&#define WHITE 0x00ffffff
+       x1 <= DISPLAY_COLUMNS-1 &&
+       x2 >= 0 &&
+       x2 <= DISPLAY_COLUMNS-1 &&
+       y1 >= 0 &&
+       y1 <= DISPLAY_ROWS-1 &&
+       y2 >= 0 &&
+       y2 <= DISPLAY_ROWS-1) {
+      if (x2 < x1) {
+         xmin = x2;
+         xmax = x1;
+      }
+      else {
+         xmin = x1;
+         xmax = x2;
+      }
+      if (y2 < y1) {
+         ymin = y2;
+         ymax = y1;
+      }
+      else {
+         ymin = y1;
+         ymax = y2;
+      }
+
+      for (i=xmin; i<=xmax; i++) {
+         for (j=ymin; j<=ymax; j++) {
+	   XTft_SetPixel(Tft, i, j, col);
+         }
+      }	   XTft_SetPixel(Tft, i, j, col);
+      return 0;
+   }
+   return 1;
+
 }
 
  int TftDrawLine(XTft *InstancePtr, int ColStartPos, int RowStartPos,
