@@ -38,5 +38,4 @@ void IO_init(IOmanager * io, IOType type, IOmanager_cb callback);
  * Send informations to the server (if we are player) or to the two players (if we are the server).
  * 
  */
-
-
+void IO_send(IOmanager * io, void * data);
