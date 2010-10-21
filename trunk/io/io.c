@@ -251,5 +251,5 @@ void IO_PSendUpdate(IOmanager * io, GameState* state)
 	}
 }
 
-
+void IO_SSendUpdate();
 
