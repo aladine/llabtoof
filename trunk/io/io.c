@@ -155,8 +155,11 @@ void IO_inputThread(IOmanager * io)
 			received1 = XUartLite_Recv(io->uartlite[1], io->input_buffer1+total1, PACKET_SIZE-total1);
 			total1 += received1;
 			
-			if(total1 == 4) io->callback(io->input_buffer1);
-			for(i=0; i<4; i++) io->input_buffer1[i] = 0;
+			if(total1 == 4) 
+			{
+				io->callback(io->input_buffer1);
+				for(i=0; i<4; i++) io->input_buffer1[i] = 0;
+			}
 		}
 		
 		if(!received0 && !received1) usleep(1000); //sleep for 1ms if there is no activity
