@@ -9,12 +9,17 @@
 #include <sys/timer.h>
 #include "xmbox.h"
 #include "xtmrctr.h"
-#include "timer.h"
+#include "xtmrctr.h"
+#include "xintc.h"
+#include "xil_exception.h"
 #include "display.h"
-
+#include "xintc.h"
 //#define Local_MutexNumber 0
 #define TFT_DEVICE_ID XPAR_XPS_TFT_0_DEVICE_ID
+
 #define TMRCTR_DEVICE_ID	XPAR_TMRCTR_0_DEVICE_ID
+#define INTC_DEVICE_ID		XPAR_INTC_0_DEVICE_ID
+#define TMRCTR_INTERRUPT_ID	XPAR_INTC_0_TMRCTR_0_VEC_ID
 
 #define TIMER_COUNTER_0	 0
 #define DISPLAY_COLUMNS  640
@@ -22,16 +27,30 @@
 #define PCK_SIZE         16
 #define GREEN 0x0000ff00
 #define RED 0x00ff0000
+#define YELLOW 0x000000ff
+
 #define BLUE 0x000000ff
 #define WHITE 0x00ffffff
 #define BLACK 0x00000000
+#define TIMER_CNTR_0 0
+
 static XTft TftInstance;
-struct sched_param sched_par;
-pthread_attr_t attr;
-pthread_t tid1;
+
 
 XMbox xmbox;
 XMbox_Config *xmbox_ConfigPtr;
+
+/************************** Variable Definitions *****************************/
+XIntc InterruptController;  /* The instance of the Interrupt Controller */
+XIntc *IntcInstancePtr;
+XTmrCtr TimerCounter;   /* The instance of the Timer Counter */
+
+/*
+ * The following variables are shared between non-interrupt processing and
+ * interrupt processing such that they must be global.
+ */
+volatile int TimerExpired;
+
 
 int rcvmsg[PCK_SIZE];
 int rcvd;
@@ -52,31 +71,229 @@ struct ball_t{
 
 volatile int taskrunning;
 
-void tft_displaycontrol(XTft *TftInstance,struct team_t *teamA,struct team_t *teamB,struct ball_t ball)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/***************************** Include Files *********************************/
+
+/************************** Constant Definitions *****************************/
+#ifndef TESTAPP_GEN
+/*
+ * The following constants map to the XPAR parameters created in the
+ * xparameters.h file. They are only defined here such that a user can easily
+ * change all the needed parameters in one place.
+ */
+#define TMRCTR_DEVICE_ID	XPAR_TMRCTR_0_DEVICE_ID
+#define INTC_DEVICE_ID		XPAR_INTC_0_DEVICE_ID
+#define TMRCTR_INTERRUPT_ID	XPAR_INTC_0_TMRCTR_0_VEC_ID
+
+/*
+ * The following constant determines which timer counter of the device that is
+ * used for this example, there are currently 2 timer counters in a device
+ * and this example uses the first one, 0, the timer numbers are 0 based
+ */
+#define TIMER_CNTR_0	 0
+
+#endif
+
+#define RESET_VALUE	 0xF0000000
+
+
+static int TmrCtrSetupIntrSystem(XIntc* IntcInstancePtr,
+				XTmrCtr* InstancePtr,
+				u16 DeviceId,
+				u16 IntrId,
+				u8 TmrCtrNumber);
+
+void TimerCounterHandler(void *CallBackRef, u8 TmrCtrNumber);
+
+void TmrCtrDisableIntr(XIntc* IntcInstancePtr, u16 IntrId);
+
+/************************** Variable Definitions *****************************/
+XIntc InterruptController;  /* The instance of the Interrupt Controller */
+
+XTmrCtr TimerCounterInst;   /* The instance of the Timer Counter */
+
+volatile int TimerExpired;
+
+
+/*****************************************************************************/
+void TimerCounterHandler(void *CallBackRef, u8 TmrCtrNumber)
 {
-	tft_display_team(TftInstance,teamA,BLUE);
-	tft_display_team(TftInstance,teamB,RED);
-	Draw_Ball(TftInstance,ball.x,ball.y,GREEN);
+	XTmrCtr *InstancePtr = (XTmrCtr *)CallBackRef;
+   //
+   control();
+
+	
+	
+	//
+	
+	/*
+	 * Check if the timer counter has expired, checking is not necessary
+	 * since that's the reason this function is executed, this just shows
+	 * how the callback reference can be used as a pointer to the instance
+	 * of the timer counter that expired, increment a shared variable so
+	 * the main thread of execution can see the timer expired
+	 */
+	 print("sdffs");
+	if (XTmrCtr_IsExpired(InstancePtr, TmrCtrNumber)) {
+		TimerExpired++;
+		if(TimerExpired == 3) {
+			XTmrCtr_SetOptions(InstancePtr, TmrCtrNumber, 0);
+		}
+	}
 }
 
-void tft_clear(XTft *TftInstance,struct team_t *teamA,struct team_t *teamB,struct ball_t ball)
+/*****************************************************************************/
+
+static int TmrCtrSetupIntrSystem(XIntc* IntcInstancePtr,
+				 XTmrCtr* TmrCtrInstancePtr,
+				 u16 DeviceId,
+				 u16 IntrId,
+				 u8 TmrCtrNumber)
 {
-	tft_display_team(TftInstance,teamA,BLACK);
-	tft_display_team(TftInstance,teamB,BLACK);
-	Draw_Ball(TftInstance,ball.x,ball.y,BLACK);
+	 int Status;
+
+#ifndef TESTAPP_GEN
+	/*
+	 * Initialize the interrupt controller driver so that
+	 * it's ready to use, specify the device ID that is generated in
+	 * xparameters.h
+	 */
+	Status = XIntc_Initialize(IntcInstancePtr, INTC_DEVICE_ID);
+	if (Status != XST_SUCCESS) {
+		return XST_FAILURE;
+	}
+#endif
+	/*
+	 * Connect a device driver handler that will be called when an interrupt
+	 * for the device occurs, the device driver handler performs the specific
+	 * interrupt processing for the device
+	 */
+	Status = XIntc_Connect(IntcInstancePtr, IntrId,
+				(XInterruptHandler)XTmrCtr_InterruptHandler,
+				(void *)TmrCtrInstancePtr);
+	if (Status != XST_SUCCESS) {
+		return XST_FAILURE;
+	}
+
+#ifndef TESTAPP_GEN
+	/*
+	 * Start the interrupt controller such that interrupts are enabled for
+	 * all devices that cause interrupts, specific real mode so that
+	 * the timer counter can cause interrupts thru the interrupt controller.
+	 */
+	Status = XIntc_Start(IntcInstancePtr, XIN_REAL_MODE);
+	if (Status != XST_SUCCESS) {
+		return XST_FAILURE;
+	}
+#endif
+
+	/*
+	 * Enable the interrupt for the timer counter
+	 */
+	XIntc_Enable(IntcInstancePtr, IntrId);
+
+#ifndef TESTAPP_GEN
+	/*
+	 * Initialize the exception table.
+	 */
+	Xil_ExceptionInit();
+
+	/*
+	 * Register the interrupt controller handler with the exception table.
+	 */
+	Xil_ExceptionRegisterHandler(XIL_EXCEPTION_ID_INT,
+					(Xil_ExceptionHandler)
+					XIntc_InterruptHandler,
+					IntcInstancePtr);
+
+	/*
+	 * Enable non-critical exceptions.
+	 */
+	Xil_ExceptionEnable();
+
+#endif
+	return XST_SUCCESS;
 }
 
-void	 tft_temp()
+
+/******************************************************************************/
+
+void TmrCtrDisableIntr(XIntc* IntcInstancePtr, u16 IntrId)
 {
+	/*
+	 * Disable the interrupt for the timer counter
+	 */
+	XIntc_Disable(IntcInstancePtr, IntrId);
+
+	return;
 }
 
-void tft_display_team(XTft *TftInstance,struct team_t *team,int col)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+void tft_display_team(XTft *Tft,struct team_t *team,int col)
 {
 	int i;
 	for (i=0;i++;i<5)
-	Draw_Player(TftInstance,team->pos[i].x,team->pos[i].y,col);
-
+	Draw_Player(Tft,team->pos[i].x,team->pos[i].y,col);
 }
+
+void tft_displaycontrol(XTft *Tft,struct team_t *teamA,struct team_t *teamB,struct ball_t ball)
+{
+	tft_display_team(Tft,teamA,BLUE);
+	tft_display_team(Tft,teamB,YELLOW);
+	Draw_Ball(Tft,ball.x,ball.y,GREEN);
+}
+
+void tft_clear(XTft *Tft,struct team_t *teamA,struct team_t *teamB,struct ball_t ball)
+{
+	tft_display_team(Tft,teamA,BLACK);
+	tft_display_team(Tft,teamB,BLACK);
+	Draw_Ball(Tft,ball.x,ball.y,BLACK);
+}
+
 
 
 void state(int game_state)
@@ -84,8 +301,7 @@ void state(int game_state)
 	
 
 }
-void* thread_func_1 () {
-  print("\r Thread 1 running\r\n");
+void control() {
   struct team_t *teamA,*teamB;
   struct ball_t ball;
   int ret;
@@ -97,11 +313,7 @@ void* thread_func_1 () {
 	
 	tft_clear(&TftInstance,teamA,teamB,ball);
 	 print("-- Printed the first Part --\r\n");
-	 sleep(200);
-	 Init(&TftInstance);
-	 tft_temp();
-	 print("-- Printed the second part --\r\n");
-	 sleep(200);
+	
 	 //XTft_ClearScreen(&TftInstance);
 	 tft_displaycontrol(&TftInstance,teamA,teamB,ball);
 	 sleep(200);
@@ -158,25 +370,13 @@ void* thread_func_1 () {
   
 }
 
-/* * Interrupt Vector 
-   * to update the VGA (puerly xtft operation 
- */
 
 
 
-int main (void) {
-  
-  //Control does not reach here
-  
+int main (void) 
+{
 
-  
-  //Start Xilkernel
-  xilkernel_main ();
-}
-
-
-int main_prog(void) {   // This thread is statically created (as configured in the kernel configuration) and has priority 0 (This is the highest possible)
-  int ret;
+ int ret;
   
   print("-- Entering main() --\r\n");
   
@@ -209,9 +409,13 @@ int main_prog(void) {   // This thread is statically created (as configured in t
       print("\r Failed 2 \r\n");
 		return XST_FAILURE;
   }
+  
+  Init(&TftInstance);
+  display_score(&TftInstance, 1, 2,  2,  3);
+  
   print("\r Success 2 \r\n");
-  XTft_ClearScreen(&TftInstance);
-  print("-- Screen Cleared --\r\n");
+ // XTft_ClearScreen(&TftInstance);
+ // print("-- Screen Cleared --\r\n");
   /* * End of Init XTFT Device */
   
   /* * Init of XMailbox */
@@ -227,7 +431,12 @@ int main_prog(void) {   // This thread is statically created (as configured in t
 		return Status;
 	}
    /* * End of init XMbox */
-	/* * Start of init Timer */
+	
+	
+	
+	
+	
+	/* * Start of init Timer 
 	XTmrCtr *TmrCtrInstancePtr = &TimerCounter;
 
 	Status = XTmrCtr_Initialize(TmrCtrInstancePtr, TMRCTR_DEVICE_ID);
@@ -243,24 +452,118 @@ int main_prog(void) {   // This thread is statically created (as configured in t
 
 	int Value1 = XTmrCtr_GetValue(TmrCtrInstancePtr, TIMER_COUNTER_0);
 	XTmrCtr_Start(TmrCtrInstancePtr, TIMER_COUNTER_0);
-	/*End of init timer*/
+	End of init timer*/
 	
+
 	
-  /* * Init of RR Schedule */
-  
-  ret = pthread_create(&tid1, NULL, (void*)thread_func_1, NULL);
-  
-  if (ret != 0)  
-  {
-    xil_printf ("-- ERROR (%d) launching thread_func_1...\r\n", ret);
-  }
-  else 
-  { 
-    xil_printf ("Thread 1 launched with ID %d \r\n",tid1);
-  }
-  
-  /* * End of Init RR Schedule */ 
+
+	/*
+	 * Run the Timer Counter - Interrupt example.
+	 */
+  XTmrCtr *TmrCtrInstancePtr = &TimerCounter;
+  XIntc* IntcInstancePtr = &InterruptController;
+  print("Timer start");
+  int LastTimerExpired = 0;
+  print("Timer begin \n");
+
+	/*
+	 * Initialize the timer counter so that it's ready to use,
+	 * specify the device ID that is generated in xparameters.h
+	 */
+	Status = XTmrCtr_Initialize(TmrCtrInstancePtr, TMRCTR_DEVICE_ID);
+	if (Status != XST_SUCCESS) {
+		return XST_FAILURE;
+	}
+  print("Timer init \n");
+
+	/*
+	 * Perform a self-test to ensure that the hardware was built
+	 * correctly, use the 1st timer in the device (0)
+	 */
+	Status = XTmrCtr_SelfTest(TmrCtrInstancePtr, TIMER_COUNTER_0);
+	/*if (Status != XST_SUCCESS) {
+		return XST_FAILURE;
+	}*/
+  print("Timer self test \n");
+
+	/*
+	 * Connect the timer counter to the interrupt subsystem such that
+	 * interrupts can occur.  This function is application specific.
+	 */
+	Status = TmrCtrSetupIntrSystem(IntcInstancePtr,
+					TmrCtrInstancePtr,
+					TMRCTR_DEVICE_ID,
+					TMRCTR_INTERRUPT_ID,
+					TIMER_COUNTER_0);
+	if (Status != XST_SUCCESS) 
+	{
+		return XST_FAILURE;
+	}
+  print("Timer set up \n");
+
+	/*
+	 * Setup the handler for the timer counter that will be called from the
+	 * interrupt context when the timer expires, specify a pointer to the
+	 * timer counter driver instance as the callback reference so the handler
+	 * is able to access the instance data
+	 */
+	XTmrCtr_SetHandler(TmrCtrInstancePtr, TimerCounterHandler,
+					   TmrCtrInstancePtr);
+
+	/*
+	 * Enable the interrupt of the timer counter so interrupts will occur
+	 * and use auto reload mode such that the timer counter will reload
+	 * itself automatically and continue repeatedly, without this option
+	 * it would expire once only
+	 */
+	XTmrCtr_SetOptions(TmrCtrInstancePtr, TIMER_COUNTER_0,
+				XTC_INT_MODE_OPTION | XTC_AUTO_RELOAD_OPTION);
+
+	/*
+	 * Set a reset value for the timer counter such that it will expire
+	 * eariler than letting it roll over from 0, the reset value is loaded
+	 * into the timer counter when it is started
+	 */
+	XTmrCtr_SetResetValue(TmrCtrInstancePtr, TIMER_COUNTER_0, RESET_VALUE);
+
+	/*
+	 * Start the timer counter such that it's incrementing by default,
+	 * then wait for it to timeout a number of times
+	 */
+	XTmrCtr_Start(TmrCtrInstancePtr, TIMER_COUNTER_0);
+
+	while (1) {
+		/*
+		 * Wait for the first timer counter to expire as indicated by the
+		 * shared variable which the handler will increment
+		 */
+		   print(" Loop");
+
+		while (TimerExpired == LastTimerExpired) {
+		  
+		}
+		LastTimerExpired = TimerExpired;
+  print(" TimerExpired");
+		/*
+		 * If it has expired a number of times, then stop the timer counter
+		 * and stop this example
+		 */
+		if (TimerExpired == 3) {
+
+			XTmrCtr_Stop(TmrCtrInstancePtr, TIMER_COUNTER_0);
+			  print("Timer stop");
+
+			break;
+		}
+	}
+
+	TmrCtrDisableIntr(IntcInstancePtr, TMRCTR_DEVICE_ID);
+	
+
+	return XST_SUCCESS;
+	
+
+
+
 
 }
-
-

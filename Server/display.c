@@ -11,7 +11,7 @@
 #define BLUE 0x000000ff
 #define WHITE 0x00ffffff
 #define BLACK 0x00000000  
-
+#define YELLOW 0x00ffff00
 
 
 //to shift value of x on display
@@ -26,84 +26,110 @@ int Y(int y){
 
 
 void display_score(XTft *Tft,int scoreA,int foulA, int scoreB, int foulB){
-  XTft_SetPosChar(Tft, 20,270);
-  XTft_SetColor(Tft, WHITE,RED);
-  TftWriteString(Tft, (u8*)"SCORE: \n"+scoreA);
-  TftWriteString(Tft, (u8*)"FOULS: \n"+foulA);
-
-  XTft_SetPosChar(Tft, 600,270);
-  XTft_SetColor(Tft, WHITE,RED);
-  TftWriteString(Tft, (u8*)"SCORE: \n"+scoreB);
-  TftWriteString(Tft, (u8*)"FOULS: \n"+foulB);
-
+  XTft_SetPosChar(Tft, 40,420);
+  XTft_SetColor(Tft, WHITE,BLUE);
+  TftWriteString(Tft, (u8*)"TEAM A  SCORE:  FOULS: " );
+  
+  XTft_SetPosChar(Tft, 340,420);
+  XTft_SetColor(Tft, WHITE,YELLOW);
+  TftWriteString(Tft, (u8*)"TEAM B  SCORE:  FOULS: " );
 }
 
 
 /*display time counting down 3 2 1*/
-void count_down(int count){
+void count_down(XTft *Tft,int count){
   XTft_SetPosChar(Tft, 300,10);
   XTft_SetColor(Tft, WHITE,BLACK);
   TftWriteString(Tft, (u8*)"START... \n"+count);
 }
 
 
+void XTft_DrawBox(XTft *Tft, int xmin, int ymin, int xmax, int ymax, unsigned int col)
+{		
+int i,j;
+		for (i=xmin; i<=xmax; i++) {
+		   XTft_SetPixel(Tft, i, ymin, col);
+		   XTft_SetPixel(Tft, i, ymax, col);
+			}
+		for (j=ymin; j<=ymax; j++) {
+		   XTft_SetPixel(Tft, xmin, j, col);
+		   XTft_SetPixel(Tft, xmax, j, col);
+			}
+}
+
 int Draw_Player(XTft *Tft, int x, int y,unsigned int col){
-	XTft_DrawSolidBox(Tft,x-7,y+1,x+7,y-1,col);
-	XTft_DrawSolidBox(Tft,x-6,y+3,x+6,y-3,col);
-	//XTft_DrawSolidBox(&Tft,x-5,y+3,x+5,y-3,col);
-	XTft_DrawSolidBox(Tft,x-5,y+5,x+5,y-5,col);
-	//XTft_DrawSolidBox(Tft,x-3,y+5,x+3,y-5,col);
-	XTft_DrawSolidBox(Tft,x-3,y+6,x+3,y-6,col);
-	XTft_DrawSolidBox(Tft,x-1,y+7,x+1,y-7,col);
+	XTft_DrawBox(Tft,x-7,y-1,x+7,y+1,col);
+	XTft_DrawBox(Tft,x-6,y-3,x+6,y+3,col);
+	XTft_DrawBox(Tft,x-5,y-5,x+5,y+5,col);
+	XTft_DrawBox(Tft,x-3,y-6,x+3,y+6,col);
+	XTft_DrawBox(Tft,x-1,y-7,x+1,y+7,col);
+	XTft_DrawBox(Tft,x-4,y-4,x+4,y+4,col);
+
+	XTft_DrawSolidBox(Tft,x-2,y-2,x+2,y+2,col);
 
 }
 
 
 int Draw_Border(XTft *Tft){
+/*
+	TftDrawLine(Tft,20,20,20,380,WHITE);
+	TftDrawLine(Tft,40,0,600,0,WHITE);
+	TftDrawLine(Tft,620,380,620,20,WHITE);
+	TftDrawLine(Tft,40,400,600,400,WHITE);
+	
+	TftDrawLine(Tft,40,0,20,20,WHITE);
+	TftDrawLine(Tft,600,0,620,20,WHITE);
+	TftDrawLine(Tft,40,400,20,380,WHITE);
+	TftDrawLine(Tft,600,400,620,380,WHITE);
+	
+	TftDrawLine(Tft,320,0,320,400,WHITE);
+*/
 
-	TftDrawLine(Tft,20,40,20,440,WHITE);
-	TftDrawLine(Tft,20,40,620,40,WHITE);
-	TftDrawLine(Tft,620,440,620,40,WHITE);
-	TftDrawLine(Tft,20,440,620,440,WHITE);
+
+	TftDrawLine(Tft,20,60,20,420,WHITE);
+	TftDrawLine(Tft,40,40,600,40,WHITE);
+	TftDrawLine(Tft,620,420,620,60,WHITE);
+	TftDrawLine(Tft,40,440,600,440,WHITE);
 	
 	TftDrawLine(Tft,40,40,20,60,WHITE);
 	TftDrawLine(Tft,600,40,620,60,WHITE);
 	TftDrawLine(Tft,40,440,20,420,WHITE);
 	TftDrawLine(Tft,600,440,620,420,WHITE);
-	XTft_DrawSolidBox(Tft,0,210,20,270,GREEN);
-	XTft_DrawSolidBox(Tft,620,210,640,270,GREEN);
-	XTft_DrawSolidBox(Tft,620,210,630,270,RED);
-	XTft_DrawSolidBox(Tft,620,210,630,270,RED);
 
+	XTft_DrawBox(Tft,0,210,20,270,GREEN);
+	XTft_DrawBox(Tft,620,210,638,270,GREEN);
+	//red not display
+	XTft_DrawBox(Tft,20,200,70,280,RED);
+	XTft_DrawBox(Tft,570,200,620,280,RED);
 }
 
 int Draw_Ball(XTft *Tft, int x, int y,unsigned int col){
 	
-	XTft_DrawSolidBox(Tft,x-5,y+1,x+5,y-1,col);
-	XTft_DrawSolidBox(Tft,x-4,y+2,x+4,y-2,col);
-	XTft_DrawSolidBox(Tft,x-3,y+3,x+3,y-3,col);
-	XTft_DrawSolidBox(Tft,x-2,y+4,x+2,y-4,col);
-	XTft_DrawSolidBox(Tft,x-1,y+5,x+1,y-5,col);
+	XTft_DrawBox(Tft,x-5,y-1,x+5,y+1,col);
+	XTft_DrawBox(Tft,x-4,y-2,x+4,y+2,col);
+	XTft_DrawBox(Tft,x-3,y-3,x+3,y+3,col);
+	XTft_DrawBox(Tft,x-2,y-4,x+2,y+4,col);
+	XTft_DrawBox(Tft,x-1,y-5,x+1,y+5,col);
+   XTft_SetPixel(Tft, x, y, col);
+
 }
+
+
 
 float distance(int x, int y, int a, int b){
-return ((x-a)*(x-a)+(y-b)*(y-b));
+	return ((x-a)*(x-a)+(y-b)*(y-b));
 }
 
-int in_circle(int x, int y){
-if (distance(x,y,DISPLAY_COLUMNS/2,DISPLAY_ROWS/2)>50*50)
-return 0;
-return 1;
-}
 
 
 int Draw_Circle(XTft *TftInstance,  unsigned int col){
 	int Xmin = DISPLAY_COLUMNS/2;
 	int Ymin = DISPLAY_ROWS/2;
 	int Index1,Index2;
-		for (Index1 = Xmin-50; Index1 <= Xmin+50; Index1++) {		
-			for (Index2 = Xmin-50; Index2 <= Xmin+50; Index2++) {
-				if (in_circle(Index1,Index2)==1) 	   XTft_SetPixel(TftInstance, Index1, Index2, col);
+		for (Index1 = Xmin-50; Index1 < Xmin+50; Index1++) {		
+			for (Index2 = Ymin-50; Index2 < Ymin+50; Index2++) {
+				if ((distance(Index1,Index2,Xmin,Ymin)>49*49-1) && (distance(Index1,Index2,Xmin,Ymin)<51*51+1)) 
+				XTft_SetPixel(TftInstance, Index1, Index2, col);
 			
 			}
 		}	
@@ -113,8 +139,8 @@ int Draw_Circle(XTft *TftInstance,  unsigned int col){
 void Init(XTft *TftInstance){  
 
 Draw_Border(TftInstance);
-//Draw_Player(TftInstance,300,300,RED);
-//Draw_Ball(TftInstance,400,400,RED);
+Draw_Player(TftInstance,300,300,YELLOW);
+Draw_Ball(TftInstance,400,400,YELLOW);
 Draw_Circle(TftInstance,GREEN);
 }
 
@@ -136,7 +162,7 @@ int XTft_DrawSolidBox(XTft *Tft, int x1, int y1, int x2, int y2, unsigned int co
 {
    int xmin,xmax,ymin,ymax,i,j;
 
-   if (x1 >= 0 &&#define WHITE 0x00ffffff
+   if (x1 >= 0 &&
        x1 <= DISPLAY_COLUMNS-1 &&
        x2 >= 0 &&
        x2 <= DISPLAY_COLUMNS-1 &&
