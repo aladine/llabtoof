@@ -18,35 +18,6 @@
 
 #include "io.h"
 
-#include <pthread.h>
-
-#include "xparameters.h"
-#include "xstatus.h"
-#include "xuartlite.h"
-
-#define PACKET_SIZE 4	// 4 bytes is 32 bits
-
-struct IOmanager_s
-{
-	bool init;
-	IOType type;			// Are we a player or the server ??
-	XUartLite uartlite[2];	// UARTLite instances (just one is used if we're a player)
-	IOmanager_cb callback;	// Callback function called when data is received
-	
-	char input_buffer0[PACKET_SIZE];
-	char input_buffer1[PACKET_SIZE];
-//	char input_count[2];
-	
-	pthread_t input_t;		// Pooling thread (checking for new stuff on input);
-	
-	/*GameState input;		// I/O GameStates
-	GameState output;
-	
-	bool started;			// Player : did we sended the start position packets ?
-							// Server : did we received the two start position packets ?
-	bool r1, r2;			// Used by the server : did we received the infos from teams A&B ?*/
-}
-
 //
 // Private functions prototypes
 //
@@ -57,7 +28,7 @@ void IO_inputThread(IOmanager * io);
 //
 // Functions
 //
-
+/*
 void initIO(IOmanager * io, IOType type, IOmanager_cb callback)
 {
 	int status;
@@ -67,8 +38,7 @@ void initIO(IOmanager * io, IOType type, IOmanager_cb callback)
 	io->callback = callback;
 	
 	/*io->input_count[0] = 0;
-	io->input_count[1] = 0;*/
-	io->started = false;
+	io->input_count[1] = = FALSE1;
 	
 	status = IO_initUART(&(io->uartlite[0]), XPAR_UARTLITE_1_DEVICE_ID);
 	if(status != XST_SUCCESS) return;
@@ -83,19 +53,16 @@ void initIO(IOmanager * io, IOType type, IOmanager_cb callback)
 	status = pthread_create(&io->input_t, NULL, (void*)IO_inputThread, io);
 	
 	io->init = 1;
-}
-
+	*/	
 void IO_send(IOmanager * io, void * data)
 {
-	if(!io || !io->init || !data) return;
-	
-	XUartLite_Send(io->uartlite[0], data, 4);
-	
-	if(io->type == SERVER)
-		XUartLite_Send(io->uartlite[1], data, 4);
-	
+	if(!io || !(io->init) || !data)
+		return;
+	//XUartLite_Send(io->uartlite[0], data, 4);
+	//if(io->type == SERVER)
+	//	XUartLite_Send(io->uartlite[1], data, 4);
 }
-
+/*
 void IO_initUART(XUartLite* uartlite, u16 device_id)
 {
 	if(!uartlite) return;
@@ -121,6 +88,7 @@ void IO_initUART(XUartLite* uartlite, u16 device_id)
  * 
  * 
  */
+ /*
 void IO_inputThread(IOmanager * io)
 {
 	if(!io) return;
@@ -165,4 +133,4 @@ void IO_inputThread(IOmanager * io)
 		if(!received0 && !received1) usleep(1000); //sleep for 1ms if there is no activity
 	}
 }
-
+*/

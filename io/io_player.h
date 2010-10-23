@@ -17,9 +17,17 @@
  * 
  */
  
-typedef struct io_player_manager IOPlayermanager;
+ 
+ //Callback function ? Should use this when recieving data.
+//void (*IOmanager_cb)(void); //Void function pointer ?
+ 
+//typedef struct io_player_manager IOPlayermanager;
 
-void IOPlayer_init(IOPlayermanager * io, IOmanager_cb callback);
+//typedef void (*IOmanager_cb)(GameState*);
 
-void IOPlayer_send(IOPlayermanager * io, GameState * output);
+void IOPlayer_init(IOmanager * io, IOmanager_cb callback );
+void IO_PSendInitPos(IOmanager * io, GameState* state);
+void IOPlayer_send(IOmanager * io, GameState * output);
+void IO_PSendUpdate(IOmanager * io, GameState* state);
+
 
