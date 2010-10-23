@@ -83,3 +83,107 @@ void IOServer_SendInfo(IOmanager * io, GameState * state){
 	
 }
 
+/***********Functions to recieve packets from the controllers.************/
+
+/*	Translates packets currently in the buffer and updates gamestate.
+ *	Need a way for the server to know when to call this function ?
+ *	I assume that the server uses buffer1.
+ *	I assume that buffer1[0-3] contains the comm.bits from [32-0]
+ * 	where bit 32 = buffer1[0][MSB] and bit 0 = buffer[3][LSB].
+ *	The code can "easily" be changed if either of the assumptions are wrong.
+*/
+void IO_SRecieveUpdate(IOmanager * io, GameState * state)
+{
+	//need a check here to see if the manager is ready, i.e the buffers are ready?
+	unsigned char tempchar = 0;  //I guess 0 = "00000000"
+	unsigned char playerid;
+	//TEAM : Check which team the player is on.
+	IOTeamID teamid;
+	if( (io->input_buffer1[0]) & (00100000) != 0) //bit 29 = 1 => TEAM B
+	{
+		teamid = TEAM_B;
+	}
+	else //bit 29 = 0. TEAM A. 
+	{
+		teamid = TEAM_A;
+	}
+	
+	//PlayerID. Bits 28-25 in [0]
+	tempchar = io->input_buffer1[0] & (00011110);
+	tempchar>>1;	//0000_XXXX; I assume that playerID goes from 0-4.
+	playerid = tempchar;
+	
+	//Check packet type
+	if( (io->input_buffer1[0]) & (10000000) != 0) //bit 31 = 1 => Init.pos packet.
+	{
+		unsigned short int tempint = 0; //16 bits.
+		unsigned short int tempint2 = 0;//16 bits
+		unsigned short int xposition, yposition = 0;
+		
+		//Xposition. Bits 24-15. Uses bits from buffer[0-2]: Lsb[0] all of [1] and msb[2].
+		tempchar = io->input_buffer1[0] & (00000001); //only LSB[0].
+		tempint = tempchar; //"0000_0000_0000_000X"
+		tempint<<9;			//"0000_00X0_0000_0000"
+		tempint2 = io->input_buffer1[1]; //bit 23-16
+		tempint2<<1;		//"0000_000X_XXXX_XXX0"
+		tempint = tempint & tempint2;//only need LSB now which is MSB from [2].
+		tempchar = io->input_buffer1[2] & (10000000); //only MSB[2].
+		tempint2 = tempchar; //0000_0000_X000_0000
+		tempint2>>7;
+		tempint = tempint & tempint2; //"0000_00XX_XXXX_XXXX"
+		xposition = tempint;
+		
+		//Yposition bits 14-5. 14-8 on [2]. 7-5 on [3].
+		tempchar = io->input_buffer1[2] & (01111111); //All except MSB[2].
+		tempint = tempchar; //"0000_0000_0XXX_XXXX"
+		tempint<<3; //"0000_00XX_XXXX_X000"
+		tempchar = io->input_buffer1[3] & (11100000);//"XXX0_0000"
+		tempchar>>5;//"0000_0XXX"
+		tempint2=tempchar;
+		tempint=tempint & tempint2;//"0000_00XX_XXXX_XXXX"
+		yposition = tempint;
+		
+		if( teamid == (io->teamid) ) //this is our player.
+		{
+			state->players[playerid].x_pos = xposition;
+			state->players[playerid].y_pos = yposition;
+		}
+		else //This is an opposing player.
+		{
+			state->players_others[playerid].x_pos = xposition;
+			state->players_others[playerid].y_pos = yposition;
+		}
+			
+	}
+	else //bit 31 = 0 => Update packet.
+	{
+		//Kick/Move, Bit:30 on [0].
+		if( io->input_buffer1[0] & (01000000) != 0) //Bit 30 = 1 => kick
+			state->kick = 1; //enough with one kick ? should've one for each player ?
+		else //Bit 30 = 0 => movement
+			state->kick = 0;
+		
+		//Direction. Bits 24-21. 24 is LSB on [0]. 23-21 on [1].
+		unsigned char tempchar2;
+		tempchar = io->input_buffer1[0] & (00000001); 
+		tempchar<<3; //"000_X000"
+		tempchar2 = io->input_buffer1[1] & (11100000); //"XXX0_0000"
+		tempchar2>>5; //"0000_0XXX"
+		tempchar = tempchar & tempchar2; //tempchar = direction.
+
+		//Speed. Bits 20-17 on [1]
+		tempchar2 = io->input_buffer1[1] & (00011110);
+		tempchar2>>1; //thempchar2 = speed.
+		
+		if( teamid == (io->teamid) ) //this is our player.
+		{
+			state->players[playerid].direction = tempchar;
+			state->players[playerid].speed = tempchar2;
+		}
+		else //This is an opposing player.
+		{
+			state->players[playerid].direction = tempchar;
+			state->players[playerid].speed = tempchar2;
+		}
+	}
+}
