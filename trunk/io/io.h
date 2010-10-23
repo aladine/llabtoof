@@ -17,11 +17,45 @@
  */
  
 #include "structures.h"
+#define PACKET_SIZE 4	// 4 bytes is 32 bits
+#include "xmk.h"
+#include <pthread.h>
 
+#include "xparameters.h"
+#include "xstatus.h"
+#include "xuartlite.h"
 typedef struct IOmanager_s IOmanager;
 typedef void (*IOmanager_cb)(GameState*);
 
-typedef enum { PLAYER, SERVER } IOType;
+
+
+typedef enum { CONTROLLER, SERVER } IOType;
+/**
+ * Send informations to the server (if we are player) or to the two players (if we are the server).
+ * 
+ */
+void IO_send(IOmanager * io, void * data);
+
+struct IOmanager_s
+{
+	bool init;
+	IOType type;			// Are we a player or the server ??
+	XUartLite uartlite[2];	// UARTLite instances (just one is used if we're a player)
+	IOmanager_cb callback;	// Callback function called when data is received
+	
+	char input_buffer0[PACKET_SIZE];
+	char input_buffer1[PACKET_SIZE];
+//	char input_count[2];
+	
+	pthread_t input_t;		// Pooling thread (checking for new stuff on input);
+	
+	GameState input;		// I/O GameStates
+	GameState output;
+	IOTeamID teamid;
+	bool started;			// Player : did we sended the start position packets ?
+							// Server : did we received the two start position packets ?
+	bool r1, r2;			// Used by the server : did we received the infos from teams A&B ?*/
+};
 
 /**
  * Initialise I/O manager.
@@ -34,8 +68,5 @@ typedef enum { PLAYER, SERVER } IOType;
  */
 void IO_init(IOmanager * io, IOType type, IOmanager_cb callback);
 
-/**
- * Send informations to the server (if we are player) or to the two players (if we are the server).
- * 
- */
-void IO_send(IOmanager * io, void * data);
+
+
