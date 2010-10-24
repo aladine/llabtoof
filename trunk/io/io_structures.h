@@ -51,6 +51,13 @@ IOPacketP2S_update;
 
 // Server to Player Communication
 
+typedef enum
+{
+	INFO = 0,
+	CONTROL = 1
+}
+IOPacketS2PType;
+
 typedef enum 
 {
 	PLAYER = 0,
