@@ -1,3 +1,9 @@
+#ifndef IO_STRUCTURES_H
+#define IO_STRUCTURES_H
+
+#include "../structures.h"
+
+typedef void (*IOmanager_cb)(GameState*);
 
 //
 // I/O data structures definitions
@@ -94,6 +100,4 @@ typedef struct IOPacketS2P_control_s
 } IOPacketS2P_control;
 
 
-
-
-
+#endif //IO_STRUCTURES_H

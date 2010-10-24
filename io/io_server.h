@@ -16,19 +16,17 @@
  * limitations under the License.
  * 
  */
+ 
+#ifndef IO_SERVER_H
+#define IO_SERVER_H
 
 //Callback function ? Should use this when recieving data.
 //void (*IOmanager_cb)(void); //Void function pointer ?
 
-//typedef struct io_server_manager IOServermanager;
+typedef struct io_server_manager IOServermanager;
+
+void IOServer_init(IOServermanager * server, IOmanager_cb callback);
+void IOServer_send(IOServermanager * server, GameState * output);
 
 
-
-//void IOServer_init(IOServermanager * io, IOmanager_cb callback);
-
-void IOServer_send(IOmanager * io, GameState * output);
-void IOServer_SendControl(IOmanager * io, GameState * state);
-void IOServer_SendInfo(IOmanager * io, GameState * state);
-
-
-
+#endif //IO_SERVER_H
