@@ -17,43 +17,72 @@
  * 
  */
 
-#include "xparameters.h"
-#include "xstatus.h"
-#include "xuartlite.h"
-#include "xmk.h"
-#include <pthread.h>
-#include "io.h"
-#include "io_structures.h"
 #include "io_player.h"
+#include "io.h"
+
+struct io_player_manager
+{
+	IOmanager io;
+	IOmanager_cb callback;
+	
+	GameState input;		// I/O GameStates
+	GameState output;
+	
+	IOTeamID teamid;
+	bool started;
+};
+
+//
+// Private functions prototypes
+//
+
+void IOPlayer_callback(IOPlayermanager * player, void* input)
+
+void IO_PSendInitPos(IOPlayermanager * io, GameState* state);
+void IO_PSendUpdate(IOPlayermanager * io, GameState* state);
+
+//
+// Functions
+//
+
+
+void IOPlayer_init(IOPlayermanager * player, IOmanager_cb callback)
+{
+	IO_init(&(player->io), (IO_cb)IOPlayer_callback, (void*)player);
+	player->callback = callback;
+	player->started = 0;
+}
+
+void IOPlayer_callback(IOPlayermanager * player, void* input)
+{
+	//Here convert packet (input) to sructure (player->input)
+	
+	
+	player->callback(player->input);
+}
+
 
 /*	void IOPlayer_send(IOmanager * io, GameState * output) : Checks if the io is of type player or server. 
  *	If player : Checks if the player should send initialization package or update package to server. If initpackage it runs IO_PSendInitPos, 
  *	if updatepackage it calls IO_PSendUpdate.
  *	If server : NOT SURE LOL ? Possibly convert the other way around, that is recieve data from the server. Translate from package to structure.
 */
-void IOPlayer_send(IOmanager * io, GameState * output)
+void IOPlayer_send(IOPlayermanager * player, GameState * output)
 {
-	if(io->type == CONTROLLER)
+	if(!player->started)
 	{
-		if(!io->started)
-		{
-			//We are a player and we have to send initial position packets
-			IO_PSendInitPos(io, output);
-		}
-		else
-		{
-			IO_PSendUpdate(io, output);
-		}
+		//We are a player and we have to send initial position packets
+		IO_PSendInitPos(player, output);
 	}
-	else if(io->type == SERVER) //Dont see the need for this since server has its own file now. ?
+	else
 	{
-	//	if(output->
+		IO_PSendUpdate(player, output);
 	}
 }
 
 //*****************Functions that send packets from the controller to server.****************//
 // Sends the initial position packet from the controller.
-void IO_PSendInitPos(IOmanager * io, GameState* state)
+void IO_PSendInitPos(IOPlayermanager * player, GameState* state)
 {
 	unsigned char i;
 	IOPacketP2S_initial packet[5];
@@ -65,13 +94,13 @@ void IO_PSendInitPos(IOmanager * io, GameState* state)
 		packet[i].xpos = state->players[i].x_pos;
 		packet[i].ypos = state->players[i].y_pos;
 		
-		IO_send(io, (void*)(&packet[i]));
+		IO_send(&(player->io), (void*)(&packet[i]));
 	}
 	
-	io->started = TRUE1; //there is no bool but true/false is occpupied so TRIIICK.
+	player->started = 1; //there is no bool but true/false is occpupied so TRIIICK.
 }
 //Sends the update packet from the controller to the the server.
-void IO_PSendUpdate(IOmanager * io, GameState* state)
+void IO_PSendUpdate(IOPlayermanager * player, GameState* state)
 {
 	unsigned char i;
 	IOPacketP2S_update packet[5];
@@ -90,7 +119,7 @@ void IO_PSendUpdate(IOmanager * io, GameState* state)
 		packet[i].direction = state->players[i].direction;
 		packet[i].speed = state->players[i].speed;
 		
-		IO_send(io, (void*)(&packet[i])); //passes the address of io like this ?
+		IO_send(&(player->io), (void*)(&packet[i])); //passes the address of io like this ?
 	}
 }
 /****************Functions that recieve packets from the server***************/

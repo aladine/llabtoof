@@ -15,22 +15,79 @@
  * limitations under the License.
  * 
  */
-#include "xparameters.h"
-#include "xstatus.h"
-#include "xuartlite.h"
-#include "xmk.h"
-#include <pthread.h>
+ 
 #include "io.h"
-#include "io_structures.h"
 #include "io_server.h"
 
+//structure used to differentiate the two IOmanagers in the callback function
+struct io_server_callback_return
+{
+	IOServermanager * server;
+	IOTeamID team;
+};
+
+struct io_server_manager
+{
+	IOmanager io[2];
+	IOmanager_cb callback;
+	
+	GameState input;		// I/O GameStates
+	GameState output;
+	
+	bool started;
+	bool r1, r2;
+	
+	struct io_server_callback_return return_v[2];
+};
+
+//
+// Private functions prototypes
+//
+
+void IOServer_receive(IOServermanager * server, void * input);
+
+void IOServer_sendPacket(IOServermanager * server, void * output);
+void IOServer_SendControl(IOServermanager * server, GameState * state);
+void IOServer_SendInfo(IOServermanager * server, GameState * state);
+
+//
+// Functions
+//
+
+void IOServer_init(IOServermanager * server, IOmanager_cb callback)
+{
+	server->return_v[0].server = server;
+	server->return_v[1].server = server;
+	server->return_v[0].teamid = TEAM_A;
+	server->return_v[1].teamid = TEAM_B;
+	
+	IO_init(&(server->io[0]), (IO_cb)IOServer_receive, (void*)(&(server->return_v[0])));	//init IO for team A
+	IO_init(&(server->io[1]), (IO_cb)IOServer_receive, (void*)(&(server->return_v[1])));	//init IO for team B
+	server->callback = callback;
+	
+	server->started = 0;
+	server->r1 = 0;
+	server->r2 = 0;
+}
+
+void IOServer_receive(struct io_server_callback_return * server_t, void * input)
+{
+	IOServermanager * server = server_t->server;
+	IOTeamID team = server_t->team;
+	
+	//Here convert packet (input) to structure (server->input)
+	
+	
+	if(server->r1 && server->r2)
+		server->callback(server->input);
+}
 
 
-void IOServer_send(IOmanager * io, GameState * output)
+void IOServer_send(IOServermanager * server, GameState * output)
 {
 	//check if initialization is finished. How does the IO get r1 & r2 ?
 	// I think r1 & r2 can be set to true in the recieving function for the server.
-	if(io->r1 && io->r2) //we have recieved init from both teams. Ready to proceed.
+	if(server->r1 && server->r2) //we have recieved init from both teams. Ready to proceed.
 	{	//run update, either info or control.
 		if (output->infocontrol == CONTROL)
 			IOServer_SendControl(io, output);
@@ -41,8 +98,15 @@ void IOServer_send(IOmanager * io, GameState * output)
 		//wait for initialization. How should this be implemented ? Wait for a signal or something.
 }
 
+void IOServer_sendPacket(IOServermanager * server, void * output)
+{
+	IO_send(&(server->io[0]), output );
+	IO_send(&(server->io[1]), output );
+}
+
 //Converts GameState into control packet and sends to the player using the UART.
-void IOServer_SendControl(IOmanager * io, GameState * state){
+void IOServer_SendControl(IOmanager * io, GameState * state)
+{
 	IOPacketS2P_control packet;
 	packet.packet_type = CONTROL;
 	packet.teamid = io->teamid;
@@ -56,22 +120,29 @@ void IOServer_SendControl(IOmanager * io, GameState * state){
 
 //Converts GameState into info packet  and sends to the player using the UART.
 //Could divide this into two functions. One for player and one for ball.
-void IOServer_SendInfo(IOmanager * io, GameState * state){
+void IOServer_SendInfo(IOServermanager * server, GameState * state)
+{
 	unsigned char i;
 	IOPacketS2P_info_ball ball_packet;
-	IOPacketS2P_info_player player_packet[5];
+	IOPacketS2P_info_player player_packet;
+	
 	//First send the players.
+	//team A
 	for(i=0; i<5; i++)
 	{
-		player_packet[i].packet_type = INFO;
-		player_packet[i].playerball = PLAYER;
-		player_packet[i].teamid = io->teamid; //does io currently have a team member?
-		player_packet[i].playerid = i; // I think this will be useful on the recieving end ? No perv :P
-		player_packet[i].xpos = state->players[i].x_pos;
-		player_packet[i].ypos = state->players[i].y_pos;
-		//do I have to set unused to 0 ? Do the UART set zeroes there cause of the type ?
-		IO_send(io, (void*)(&player_packet[i]) ); //player_packet pointer?
+		player_packet.packet_type = INFO;
+		player_packet.playerball = PLAYER;
+		player_packet.teamid = TEAM_A;		//does io currently have a team member?
+		player_packet.playerid = i;			// I think this will be useful on the recieving end ? No perv :P
+		player_packet.xpos = state->players[i].x_pos;
+		player_packet.ypos = state->players[i].y_pos;
+		
+		IOServer_sendPacket(server, (void*)(&player_packet));
 	}
+	
+	//team B
+	//TODO : team b
+	
 	//Then send the ball.
 	ball_packet.packet_type = INFO;
 	ball_packet.playerball = BALL;
@@ -79,8 +150,8 @@ void IOServer_SendInfo(IOmanager * io, GameState * state){
 	ball_packet.speed = state->ball_state.speed;
 	ball_packet.xpos = state->ball_state.x_pos;
 	ball_packet.ypos = state->ball_state.y_pos;
-	IO_send(io, (void*)(&ball_packet) ); //pointer to ball_packet ?
 	
+	IOServer_sendPacket(server, (void*)(&ball_packet));
 }
 
 /***********Functions to recieve packets from the controllers.************/
