@@ -28,7 +28,7 @@ struct io_player_manager
 	GameState input;		// I/O GameStates
 	GameState output;
 	
-	IOTeamID teamid;
+	IOTeamID team;
 	bool started;
 };
 
@@ -36,31 +36,24 @@ struct io_player_manager
 // Private functions prototypes
 //
 
-void IOPlayer_callback(IOPlayermanager * player, void* input)
+void IOPlayer_sendInitPos(IOPlayermanager * io, GameState* state);
+void IOPlayer_sendUpdate(IOPlayermanager * io, GameState* state);
 
-void IO_PSendInitPos(IOPlayermanager * io, GameState* state);
-void IO_PSendUpdate(IOPlayermanager * io, GameState* state);
+void IOPlayer_recieve(IOPlayermanager * player, void* input);
+void IOPlayer_recieveInfoPlayer(IOPlayermanager * player, void* input);
+void IOPlayer_recieveInfoBall(IOPlayermanager * player, void* input);
+void IOPlayer_recieveControl(IOPlayermanager * player, void* input);
 
 //
 // Functions
 //
 
-
 void IOPlayer_init(IOPlayermanager * player, IOmanager_cb callback)
 {
-	IO_init(&(player->io), (IO_cb)IOPlayer_callback, (void*)player);
+	IO_init(&(player->io), (IO_cb)IOPlayer_recieve, (void*)player);
 	player->callback = callback;
 	player->started = 0;
 }
-
-void IOPlayer_callback(IOPlayermanager * player, void* input)
-{
-	//Here convert packet (input) to sructure (player->input)
-	
-	
-	player->callback(player->input);
-}
-
 
 /*	void IOPlayer_send(IOmanager * io, GameState * output) : Checks if the io is of type player or server. 
  *	If player : Checks if the player should send initialization package or update package to server. If initpackage it runs IO_PSendInitPos, 
@@ -72,17 +65,17 @@ void IOPlayer_send(IOPlayermanager * player, GameState * output)
 	if(!player->started)
 	{
 		//We are a player and we have to send initial position packets
-		IO_PSendInitPos(player, output);
+		IOPlayer_sendInitPos(player, output);
 	}
 	else
 	{
-		IO_PSendUpdate(player, output);
+		IOPlayer_sendUpdate(player, output);
 	}
 }
 
 //*****************Functions that send packets from the controller to server.****************//
 // Sends the initial position packet from the controller.
-void IO_PSendInitPos(IOPlayermanager * player, GameState* state)
+void IOPlayer_sendInitPos(IOPlayermanager * player, GameState* state)
 {
 	unsigned char i;
 	IOPacketP2S_initial packet[5];
@@ -99,8 +92,9 @@ void IO_PSendInitPos(IOPlayermanager * player, GameState* state)
 	
 	player->started = 1; //there is no bool but true/false is occpupied so TRIIICK.
 }
+
 //Sends the update packet from the controller to the the server.
-void IO_PSendUpdate(IOPlayermanager * player, GameState* state)
+void IOPlayer_sendUpdate(IOPlayermanager * player, GameState* state)
 {
 	unsigned char i;
 	IOPacketP2S_update packet[5];
@@ -122,7 +116,67 @@ void IO_PSendUpdate(IOPlayermanager * player, GameState* state)
 		IO_send(&(player->io), (void*)(&packet[i])); //passes the address of io like this ?
 	}
 }
+
+
 /****************Functions that recieve packets from the server***************/
+
+
+void IOPlayer_recieve(IOPlayermanager * player, void* input)
+{
+	//Here convert packet (input) to sructure (player->input)
+	
+	//Determinate packet type
+	char infocontrol = (input & (0x80000000))?1:0;	// 0x80000000 = 0b10000000..000
+	
+	if(infocontrol == INFO)
+	{
+		char playerball = (input & (0x20000000))?1:0;	// 0x20000000 = 0b00100000..000
+		
+		if(playerball == PLAYER)
+			IOPlayer_recieveInfoPlayer(player, input);
+		else
+			IOPlayer_recieveInfoBall(player, input);
+	}
+	else
+		IOPlayer_recieveControl(player, input);
+	
+	
+	player->callback(player->input);
+}
+
+void IOPlayer_recieveInfoPlayer(IOPlayermanager * player, void* input)
+{
+	//cast "raw" packet to the appropriate structure
+	IOPacketS2P_info_player * packet = (IOPacketS2P_info_player *) input;
+	
+	IOTeamID team = packet->teamid;
+	Player * f_player = &(player->input->players[team][packet->playerid]);
+	
+	f_player->x_pos = packet->xpos;
+	f_player->y_pos = packet->ypos;
+}
+
+void IOPlayer_recieveInfoBall(IOPlayermanager * player, void* input)
+{
+	//cast "raw" packet to the appropriate structure
+	IOPacketS2P_info_ball * packet = (IOPacketS2P_info_ball *) input;
+	
+	Ball * ball = &(player->input->ball);
+	
+	ball->x_pos = packet->xpos;
+	ball->y_pos = packet->ypos;
+	ball->direction = packet->direction;
+	ball->speed = packet->speed;
+}
+
+void IOPlayer_recieveControl(IOPlayermanager * player, void* input)
+{
+	//cast "raw" packet to the appropriate structure
+	IOPacketS2P_control* packet = (IOPacketS2P_control *)input;
+	
+	player->input->special = packet->foulgoal;
+}
+
 
 /*	Translates packets currently in the buffer and updates gamestate.
  *	Need a way for the controller to know when to call this function ?
@@ -131,6 +185,7 @@ void IO_PSendUpdate(IOPlayermanager * player, GameState* state)
  * 	where bit 32 = buffer1[0][MSB] and bit 0 = buffer[3][LSB].
  *	The code can "easily" be changed if either of the assumptions are wrong.
 */
+/*
 void IO_PRecieveUpdate(IOmanager * io, GameState * state)
 {
 	//a check here to see if the manager is ready, i.e the buffers are ready ?
@@ -253,5 +308,5 @@ void IO_PRecieveUpdate(IOmanager * io, GameState * state)
 		}
 	}
 }
-
+*/
 

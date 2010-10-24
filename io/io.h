@@ -24,27 +24,19 @@
 typedef struct IOmanager_s IOmanager;
 typedef void (*IO_cb)(void*, char*);
 
-
-typedef enum { CONTROLLER, SERVER } IOType;
-
-
 /**
  * Initialise I/O manager.
- * io 			a pointer to a IOmanager structure (containing IO buffers)
- * type 		a enum IOType value (PLAYER or CONTROLER)
- * callback		function pointer to the callback function
+ * io 				a pointer to a IOmanager structure (containing IO buffers)
+ * callback			function pointer to the callback function
+ * callback_arg		argument passed as first argument to callback
  * 
- * The callback function must take as first arguments a GameState pointer representing the input.
- * second element is a GameState pointer to be sended back when the function will return (output).
  */
 void IO_init(IOmanager * io, IO_cb callback, void* callback_arg);
-
 
 /**
  * Send informations to the server (if we are player) or to the two players (if we are the server).
  * 
  */
 void IO_send(IOmanager * io, void * data);
-
 
 #endif //IO_H
