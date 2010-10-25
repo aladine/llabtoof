@@ -66,8 +66,8 @@ void IOServer_init(IOServermanager * server, IOmanager_cb callback)
 	server->callback = callback;
 	
 	server->started = 0;
-	server->r1 = 0;
-	server->r2 = 0;
+	server->r1 = 0; //TODO, TEAM_A initialized?
+	server->r2 = 0; //TEAM_B initialized?
 }
 
 void IOServer_receive(struct io_server_callback_return * server_t, void * input)
@@ -76,8 +76,27 @@ void IOServer_receive(struct io_server_callback_return * server_t, void * input)
 	IOTeamID team = server_t->team;
 	
 	//Here convert packet (input) to structure (server->input)
-	
-	
+	//Need to check for inital packet or update packet ?
+	if(input[0] & (10000000) != 0) //bit 31 = 1 => initial packet
+	{
+		//cast "raw" packet to the appropriate structure.
+		IOPacketP2S_initial * packet = (IOPacketP2S_initial *) input;
+		server->input.players[team][packet->playerid].x_pos = packet.xpos;
+		server->input.players[team][packet->playerid].y_pos = packet.ypos;
+		if(team = TEAM_A)
+			server->r1 = 1; //TODO :init
+		else if(team == TEAM_B)
+			server->r2 = 1;
+	}
+	else //bit 31 = 0 => update packet.
+		//cast "raw" packet to the appropriate structure.
+		IOPacketP2S_update * packet = (IOPacketP2S_update *) input;
+		if(input & (0x40000000) != 0) //bit 30 = 1 => kick
+			server->input.players[team][packet->playerid].kick_speed = packet->speed;
+			server->input.players[team][packet->playerid].kick_direction = packet->direction;
+		else //bit 30 = 0 => movement
+			server->input.players[team][packet->playerid].speed = packet->speed;
+			server->input.players[team][packet->playerid].direction = packet->direction;
 	if(server->r1 && server->r2)
 		server->callback(server->input);
 }
@@ -163,7 +182,7 @@ void IOServer_SendInfo(IOServermanager * server, GameState * state)
  * 	where bit 32 = buffer1[0][MSB] and bit 0 = buffer[3][LSB].
  *	The code can "easily" be changed if either of the assumptions are wrong.
 */
-void IO_SRecieveUpdate(IOmanager * io, GameState * state)
+/*void IO_SRecieveUpdate(IOmanager * io, GameState * state)
 {
 	//need a check here to see if the manager is ready, i.e the buffers are ready?
 	unsigned char tempchar = 0;  //I guess 0 = "00000000"
@@ -257,4 +276,4 @@ void IO_SRecieveUpdate(IOmanager * io, GameState * state)
 			state->players[playerid].speed = tempchar2;
 		}
 	}
-}
+}*/
