@@ -37,6 +37,8 @@ typedef struct
 	unsigned x_pos, y_pos;
 	unsigned char direction;
 	unsigned char speed;
+	unsigned char kick_direction; //changed :)
+	unsigned char kick_speed;
 }
 Player;
 
@@ -54,7 +56,6 @@ typedef struct
 {
 	Ball ball;
 	Team players[2];
-	unsigned char kick;
 	SpecialEvent special;
 }
 GameState;
