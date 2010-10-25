@@ -25,37 +25,38 @@
 
 #define NO_KICK -1
 
-enum special_event
+typedef enum
 {
 	EVENT_GOAL = 0;
 	EVENT_FOOL = 1;
-};
+}
+SpecialEvent;
 
-struct player
+typedef struct
 {
 	unsigned x_pos, y_pos;
 	unsigned char direction;
 	unsigned char speed;
-};
+}
+Player;
 
-struct ball
+typedef struct
 {
 	unsigned  x_pos, y_pos;
 	unsigned char direction;
 	unsigned char speed;
-};
+}
+Ball;
 
-struct game_state
+typedef Player Team[5];	//strange syntax but probably correct
+
+typedef struct
 {
-	struct ball ball_state;
-	struct player players[5];
-	struct player players_others[5];
+	Ball ball;
+	Team players[2];
 	unsigned char kick;
-	unsigned char special;
-};
+	SpecialEvent special;
+}
+GameState;
 
-typedef struct player Player;
-typedef struct ball Ball;
-typedef struct game_state GameState;
-typedef enum special_event SpecialEvent;
 
