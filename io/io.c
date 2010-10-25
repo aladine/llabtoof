@@ -84,7 +84,7 @@ void IO_send(IOmanager * io, void * data)
  * This means that the buffer takes a maximum of 1.11ms to be filled
  * So we can sleep for 1ms between each check.
  * 
- */
+ */ 
 void IO_inputThread(IOmanager * io)
 {
 	if(!io) return;
