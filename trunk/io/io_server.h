@@ -20,10 +20,32 @@
 #ifndef IO_SERVER_H
 #define IO_SERVER_H
 
+typedef struct io_server_manager IOServermanager;
+
+//structure used to differentiate the two IOmanagers in the callback function
+struct io_server_callback_return
+{
+	IOServermanager * server;
+	IOTeamID team;
+};
+
+struct io_server_manager
+{
+	IOmanager io[2];
+	IOmanager_cb callback;
+	
+	GameState input;		// I/O GameStates
+	GameState output;
+	
+	bool started;
+	bool r1, r2;
+	
+	struct io_server_callback_return return_v[2];
+};
+
 //Callback function ? Should use this when recieving data.
 //void (*IOmanager_cb)(void); //Void function pointer ?
 
-typedef struct io_server_manager IOServermanager;
 
 void IOServer_init(IOServermanager * server, IOmanager_cb callback);
 void IOServer_send(IOServermanager * server, GameState * output);

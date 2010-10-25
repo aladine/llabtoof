@@ -109,16 +109,16 @@ void IOPlayer_sendUpdate(IOPlayermanager * player, GameState* state)
 /****************Functions that recieve packets from the server***************/
 
 
-void IOPlayer_recieve(IOPlayermanager * player, void* input)
+void IOPlayer_recieve(IOPlayermanager * player, char* input)
 {
 	//Here convert packet (input) to sructure (player->input)
 
 	//Determinate packet type
-	char infocontrol = (input & (0x80000000))?1:0;	// 0x80000000 = 0b10000000..000
+	char infocontrol = (input[0] & 0x80)?1:0;	// 0x80 = 0b10000000
 
 	if(infocontrol == INFO)
 	{
-		char playerball = (input & (0x20000000))?1:0;	// 0x20000000 = 0b00100000..000
+		char playerball = (input[0] & 0x20)?1:0;	// 0x20 = 0b00100000
 
 		if(playerball == PLAYER)
 			IOPlayer_recieveInfoPlayer(player, input);

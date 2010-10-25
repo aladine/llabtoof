@@ -19,27 +19,6 @@
 #include "io.h"
 #include "io_server.h"
 
-//structure used to differentiate the two IOmanagers in the callback function
-struct io_server_callback_return
-{
-	IOServermanager * server;
-	IOTeamID team;
-};
-
-struct io_server_manager
-{
-	IOmanager io[2];
-	IOmanager_cb callback;
-	
-	GameState input;		// I/O GameStates
-	GameState output;
-	
-	bool started;
-	bool r1, r2;
-	
-	struct io_server_callback_return return_v[2];
-};
-
 //
 // Private functions prototypes
 //
@@ -77,7 +56,7 @@ void IOServer_receive(struct io_server_callback_return * server_t, void * input)
 	
 	//Here convert packet (input) to structure (server->input)
 	//Need to check for inital packet or update packet ?
-	if(input[0] & (10000000) != 0) //bit 31 = 1 => initial packet
+	if(input[0] & (0b10000000) != 0) //bit 31 = 1 => initial packet
 	{
 		//cast "raw" packet to the appropriate structure.
 		IOPacketP2S_initial * packet = (IOPacketP2S_initial *) input;

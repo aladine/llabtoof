@@ -36,8 +36,6 @@ typedef struct
 }
 IOPlayermanager;
 
-typedef struct io_player_manager ;
-
 void IOPlayer_init(IOPlayermanager * io, IOmanager_cb callback );
 void IOPlayer_send(IOPlayermanager * io, GameState * output);
 
