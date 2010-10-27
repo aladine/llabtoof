@@ -29,14 +29,21 @@ typedef struct
 	IOmanager_cb callback;
 
 	GameState input;		// I/O GameStates
-	GameState output;
 
-	IOTeamID team;
+	TeamID team;
 	bool started;
 }
 IOPlayermanager;
 
-void IOPlayer_init(IOPlayermanager * io, IOmanager_cb callback );
+/**
+ * IOPlayer_init : init the I/O stack for the player
+ * io				a pointer to an empty IOPlayermanager structure
+ * team			the team that the player will play
+ * callback		a function pointer called when data is recieved
+ */
+void IOPlayer_init(IOPlayermanager * io, TeamID team, IOmanager_cb callback );
+
+
 void IOPlayer_send(IOPlayermanager * io, GameState * output);
 
 #endif //IO_PLAYER_H

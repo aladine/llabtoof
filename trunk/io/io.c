@@ -46,6 +46,8 @@ void IO_init(IOmanager * io, u16 device_id, IO_cb callback, void* callback_arg)
 	if(status != XST_SUCCESS) return;
 
 	XUartLite_ResetFifos(&(io->uartlite));
+	
+	
 
 	// Launch input thread (that will pool for new data)
 	status = pthread_create(&io->input_t, NULL, (void*)IO_inputThread, io);
@@ -78,7 +80,9 @@ void IO_inputThread(IOmanager * io)
 	char received = 0,
 		 total = 0;
 
-	for(i=0; i<4; i++) io->input_buffer = 0;	//empty input buffer
+	for(i=0; i<4; i++) io->input_buffer[i] = 0;	//empty input buffer
+	
+	//IO_send(io, "TH\r\n");
 
 	//main pooling thread
 	while(1)
@@ -88,11 +92,18 @@ void IO_inputThread(IOmanager * io)
 
 		if(total == 4)
 		{
+			//IO_send(io, "R!\r\n");
 			io->callback(io->callback_arg, io->input_buffer);	//empty input buffer
 			for(i=0; i<4; i++) io->input_buffer[i] = 0;
+			total = 0;
 		}
 
-		if(!received) usleep(1000); //sleep for 1ms if there is no activity
+		if(!received) 
+		{
+			//usleep(1000); //sleep for 1ms if there is no activity
+			unsigned j;
+			for(j=0; j<200; j++) {asm("nop");asm("nop");}
+		}
 	}
 }
 

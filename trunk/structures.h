@@ -22,13 +22,23 @@
 * takes the structure and converts into a 32bit vector like in the communication protocol. This vector will then be
 * sent to the server.
 */
+#ifndef STRUCTURES_H
+#define STRUCTURES_H
 
 #define NO_KICK -1
 
 typedef enum
 {
-	EVENT_GOAL = 0;
-	EVENT_FOOL = 1;
+	TEAM_A = 0,
+	TEAM_B = 1
+}
+TeamID;
+
+typedef enum
+{
+	EVENT_GOAL = 0,
+	EVENT_FOOL = 1,
+	EVENT_NONE = 2
 }
 SpecialEvent;
 
@@ -60,4 +70,4 @@ typedef struct
 }
 GameState;
 
-
+#endif //STRUCTURES_H
