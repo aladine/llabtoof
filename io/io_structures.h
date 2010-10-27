@@ -29,7 +29,7 @@ typedef struct
 {
 	IOPacketP2SType packet_type : 1;
 	unsigned unused0 : 1;
-	IOTeamID teamid : 1;
+	TeamID teamid : 1;
 	unsigned playerid : 4;
 	unsigned xpos : 10;
 	unsigned ypos : 10;
@@ -41,7 +41,7 @@ typedef struct
 {
 	IOPacketP2SType packet_type : 1;
 	IOPacketP2SKickMove kickmove : 1;
-	IOTeamID teamid : 1;
+	TeamID teamid : 1;
 	unsigned playerid : 4;
 	unsigned direction : 4;
 	unsigned speed : 4;
@@ -60,8 +60,8 @@ IOPacketS2PType;
 
 typedef enum 
 {
-	PLAYER = 0,
-	BALL = 1
+	PLAYER = 1,
+	BALL = 0
 }
 IOPacketS2PInfoType;
 
@@ -75,7 +75,7 @@ IOPacketS2PControlType;
 typedef struct IOPacketS2P_info_player_s
 {
 	IOPacketS2PType packet_type : 1;
-	IOTeamID teamid : 1;
+	TeamID teamid : 1;
 	IOPacketS2PInfoType playerball : 1;
 	
 	unsigned playerid : 4;
@@ -100,7 +100,7 @@ typedef struct IOPacketS2P_info_ball_s
 typedef struct IOPacketS2P_control_s
 {
 	IOPacketS2PType packet_type : 1;
-	IOTeamID teamid : 1;
+	TeamID teamid : 1;
 	IOPacketS2PControlType foulgoal : 1;
 	
 	unsigned unused : 29;
