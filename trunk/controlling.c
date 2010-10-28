@@ -1,36 +1,50 @@
 #include "controlling.h"
 #include "msgqueue_api.h"
-#include "iostream"
 #include "math.h"
-using namespace std;
+#include "xmbox.h"
+#include <xparameters.h>
+
 /** definition
  */
 
 
 /** Global Var
  */
-struct team
-{
-  struct player player[5];
-}
-d_team[2];
+XMbox mbox;
+XMbox_Config *ConfigPtr;
+XStatus status;
 
-struct game_state d_gamestate;
 
-float x_proj[] = {1, 0.924, 0.707, 0.383, 0, -0.383, -0.707,
+GameState local_gs;
+
+unsigned char uart_control_signal;
+/** UART Control Signal Controls what is sending through uart 
+  * 1. Sending Controlling frame (start the game)
+  * 2. Sending Controlling frame (scored)
+  * 3. Sending Controlling frame (foul)
+  * 4. Sending Controlling frame (reset)
+  * 5. Sending Controlling frame (off-time)
+  * FF. Sending DataUpdate frame
+*/
+float y_proj[] = {1, 0.924, 0.707, 0.383, 0, -0.383, -0.707,
                   -0.924, -1, -0.924, -0.707, -0.383, 0, 0.383,
                   0.707, 0.924};
-float y_proj[] = {0, -0.383, -0.707, -0.924, -1, -0.924, 
-                  -0.707, -0.383, 0, 0.383, 0.707, 0.924,
-                  1, 0.924, 0.707, 0.383};
-int x_bounce[] = {8, 7, 6, 5, 4, 3, 2, 1, 0, 15, 14, 13, 12, 11, 10, 9};
-int y_bounce[] = {0, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1};
+float x_proj[] = {0, 0.383, 0.707, 0.924, 1, 0.924, 0.707, 
+                  0.383, 0, -0.383, -0.707, -0.924, -1, -0.924, 
+				  -0.707, -0.383};
 /** Functions
  */
  
 /** Geometrical Calculation Functions
  */
 
+int sgn(int a)
+{
+	if (a >= 0) 
+		return 1;
+	else 
+		return 0;
+}
 /*get a randome position in the center circle*/
 int random_num(int *x, int *y)
 {
@@ -38,6 +52,7 @@ int random_num(int *x, int *y)
 	*y = rand()%100 + 1;
 	*x = *x + DISPLAY_COLUMNS/2-50;
     *y = *y + DISPLAY_ROWS/2-50;
+	return 1;
 }
 
 /*check anything in the field*/
@@ -64,7 +79,8 @@ float distance(int x, int y, int x1, int y1){
 }
 
 /*check if the player possess the ball*/
-int possess_ball(struct player d_player,struct ball d_ball)
+
+int possess_ball(Player d_player,Ball d_ball)
 {
 	if (distance(d_player.x_pos,d_player.y_pos,d_ball.x_pos,d_ball.y_pos)<=15)
 	  return 1;
@@ -73,13 +89,15 @@ int possess_ball(struct player d_player,struct ball d_ball)
 }
 
 /*check if the players conflict with each other*/
-int player_conflict(struct player d_player1, struct player d_player2)
+
+int player_conflict(Player d_player1, Player d_player2)
 {
 	if (distance(d_player1.x_pos,d_player1.y_pos,d_player2.x_pos,d_player2.y_pos)<=17)
 	  return 1;
 	else 
       return 0;
 }
+
 /**if the player possess the ball, the ball will either 
  * When a moving player comes in contact with a stationary ball, 
  * the ball gets twice the speed of the player, and follows the player's direction.
@@ -115,24 +133,47 @@ int check_bounce(int x, int y)
 	if((600-x+y<=28) || (x+400-y>=28)) return 4;
     return 0;
 }
- 
-void change_dir(unsigned char * dir, int cases)
+
+
+void change_dir(unsigned char * dir, unsigned char mirror_dir)
 {
+	int tmp = (mirror_dir * 2 ) % 16;
+	*dir = (tmp + 16 - *dir) % 16;
+}
+
+unsigned char check_mirror_dir(int x, int y, int x1, int y1)
+{
+	// Mirror_dir is the value of :
+	// 1, 0.924, 0.707, 0.383, 0, -0.383, -0.707, -0.924,float x_proj[] = {0 .. 7}
+	int i;
+	for (i = 0; i < 8; i++)
+		if (sgn((x - x1) * y_proj[i] - (y - y1) * x_proj[i]) 
+	     != sgn((x - x1) * y_proj[i + 1]  - (y - y1) * x_proj[i + 1]))
+			 break;
+	 return (i + 4) % 8;
+}
+
+
+/*Change the direction of ball/player*/ 
+void boundary_bounce(unsigned char * dir, int cases)
+{
+	unsigned char mirror_dir = 0;
 	switch (cases)
     {
 	case 1:
-        *dir = (8 - *dir) % 16;
+        mirror_dir = 0;
 		break; 
 	case 2:
-        *dir = (16 - *dir) % 16;
+        mirror_dir = 4;
 		break; 
 	case 3:
-        *dir = (12 - *dir) % 16;
+        mirror_dir = 6;
 		break; 
 	case 4:
-        *dir = (4 - *dir) % 16;
+        mirror_dir = 2;
 		break; 
     }
+    change_dir(dir, mirror_dir);
 }
 
 /** End of Geometrical Calculation 
@@ -141,6 +182,8 @@ void change_dir(unsigned char * dir, int cases)
  
 /** Calculate the new position and ball speed of the playground
  */
+ 
+ 
 void cal_parameter()
 { 
   int i, j, i1, j1;
@@ -153,34 +196,35 @@ void cal_parameter()
       for (j = 0; j < 5; j++)
   {
     d_x = 
-      d_team[i].player[j].x_pos
-        + (x_proj[d_team[i].player[j].direction]
-          * d_team[i].player[j].speed)
+	  x_proj[local_gs.players[i][j].x_pos]
+        + (x_proj[local_gs.players[i][j].direction]
+          * local_gs.players[i][j].speed)
             * CONST_PROP * TIME_SLOT;
     d_y = 
-      d_team[i].player[j].y_pos
-        + (y_proj[d_team[i].player[j].direction]
-          * d_team[i].player[j].speed)
+      local_gs.players[i][j].y_pos
+        + (y_proj[local_gs.players[i][j].direction]
+          * local_gs.players[i][j].speed)
             * CONST_PROP * TIME_SLOT;
             
     // Check if the new position is valid,
     // If not then change the directions
     if (bounce_cases = check_bounce(d_x, d_y) == 1)
     {
-      // Change the direction                               
-      change_dir(&(d_team[i].player[j].direction),bounce_cases);
+      // Change the direction  
+	  local_gs.players[i][j].direction = 4;
+      boundary_bounce(&(local_gs.players[i][j].direction),bounce_cases);
       // Cal the new position
-      d_x = d_team[i].player[j].x_pos
-        + (x_proj[d_team[i].player[j].direction]
-          * d_team[i].player[j].speed)
+      d_x = local_gs.players[i][j].x_pos
+        + (x_proj[local_gs.players[i][j].direction]
+          * local_gs.players[i][j].speed)
             * CONST_PROP * TIME_SLOT;        
-      d_y = d_team[i].player[j].y_pos
-        + (y_proj[d_team[i].player[j].direction]
-          * d_team[i].player[j].speed)
+      d_y = local_gs.players[i][j].y_pos
+        + (y_proj[local_gs.players[i][j].direction]
+          * local_gs.players[i][j].speed)
             * CONST_PROP * TIME_SLOT;   
     }     
-    d_team[i].player[j].y_pos = d_y;
-    d_team[i].player[j].x_pos = d_x;
+    local_gs.players[i][j].y_pos = d_y;
+    local_gs.players[i][j].x_pos = d_x;
   }
   // See if the positions have conflicts, if does, modify direction
   for (i = 0; i < 2; i++)
@@ -189,187 +233,167 @@ void cal_parameter()
               for (j1 = 0; j1 < 5; j1++)
                   if (!(i == i1 && j == j1))
                   {
-                       d_x =  d_team[i].player[j].x_pos;
-                       d_y =  d_team[i].player[j].y_pos;
-                       d_x1 = d_team[i1].player[j1].x_pos;
-                       d_y1 = d_team[i1].player[j1].y_pos;
                        // Check if two conflicts
-                       
-                       // Change accordingly, Exchange speed
+                       if (player_conflict(local_gs.players[i][j],
+                                           local_gs.players[i1][j1]))
+                       {
+                           // Change accordingly, Exchange speed    
+						   unsigned char mirror_dir = check_mirror_dir(local_gs.players[i][j].x_pos,local_gs.players[i][j].y_pos,
+							   local_gs.players[i1][j1].x_pos,local_gs.players[i1][j1].y_pos);
+						   change_dir(&local_gs.players[i][j].direction, mirror_dir);
+						   change_dir(&local_gs.players[i1][j1].direction, mirror_dir);
+                       }
                   }
                   else
                   {
-                       d_x =  d_team[i].player[j].x_pos;
-                       d_y =  d_team[i].player[j].y_pos;
-                       d_x1 = d_gamestate.ball_state.x_pos;
-                       d_y1 = d_gamestate.ball_state.y_pos;
-                       // Check if two conflicts
-                       
-                       // Change accordingly, Player remains, ball change
+                       // Check if player process the ball
+                       if (possess_ball(local_gs.players[i][j],
+                                        local_gs.ball))
+                       {
+                           if (local_gs.players[i][j].kick_speed != 0)
+                           {
+                               // Change the speed and dir of the ball by kick d                                                    
+                               local_gs.ball.direction = 
+                                 local_gs.players[i][j].kick_direction;
+							   local_gs.ball.speed = 
+                                 local_gs.players[i][j].kick_speed;                                 
+                               local_gs.players[i][j].kick_speed = 0;
+                           }            
+
+                           else
+                           {
+                               // Change accordingly, Player remains, ball change
+                               unsigned char mirror_dir = check_mirror_dir(local_gs.players[i][j].x_pos,local_gs.players[i][j].y_pos,
+							   local_gs.ball.x_pos,local_gs.ball.y_pos);
+							   change_dir(&local_gs.ball.direction, mirror_dir);
+                           }
+                       }                       
                   }
+  // Slow down the ball according to the friction
   // End of change status.
 
 }
  
- 
+
+
  
 /** Sending Data to UartPort
-  * Convert data from structure player/ball 
-    to uartdata
-  * Sall send function
  */
 int send_uartdata()
 {
-  //Players
-  struct uartdata d_uartdata;
-  unsigned char d_dir,d_spd;
-  unsigned d_x,d_y;
-  unsigned i,j;
-  for (i = 0; i < 2; i++)
-      for (j = 0; j < 5; j++)
-      {   
-          unsigned char buf = 0;       
-          d_x = d_team[i].player[j].x_pos;
-          d_y = d_team[i].player[j].y_pos;    
-          d_x = d_x / CONST_PROP;
-          d_y = d_y / CONST_PROP;
-    
-          // d_uartdata[0]
-          if (i) buf = buf + 0x40; 
-          buf = buf + 0x20;
-          buf = buf + j * 2;
-          if (d_x / 512) buf = buf + 1;
-          d_uartdata.data[0] = buf;
-          
-          // d_uartdata[1]          
-          buf = 0;
-          buf = (d_x % 512) / 2;
-          d_uartdata.data[1] = buf;
-          
-          // d_uartdata[2]          
-          buf = 0;
-          buf = buf + (d_x % 2) * 128;
-          buf = buf + (d_y / 8);
-          d_uartdata.data[2] = buf;
-          
-          // d_uartdata[3]
-          buf = 0;
-          buf = buf + (d_y % 8);
-          d_uartdata.data[3] = buf;
-          
-          msgqueue_send(&d_uartdata);
-      }
-  //Ball
-  unsigned char buf = 0;  
-      
-  d_x = d_gamestate.ball_state.x_pos;
-  d_y = d_gamestate.ball_state.y_pos;       
-  d_x = d_x / CONST_PROP;
-  d_y = d_y / CONST_PROP;
-  d_spd = d_gamestate.ball_state.speed;
-  
-  // d_uartdata[0]
-  if (d_x / 512) buf = buf + 1;
-  d_uartdata.data[0] = buf;
-          
-  // d_uartdata[1]          
-  buf = 0;
-  buf = (d_x % 512) / 2;
-  d_uartdata.data[1] = buf;
-          
-  // d_uartdata[2]          
-  buf = 0;
-  buf = buf + (d_x % 2) * 128;
-  buf = buf + (d_y / 8);
-  d_uartdata.data[2] = buf;
-          
-  // d_uartdata[3]
-  buf = 0;
-  buf = buf + (d_y % 8);
-  buf = buf + (d_spd * 2);
-  d_uartdata.data[3] = buf;
-          
-  msgqueue_send(&d_uartdata);   
-  return 1;
+	return 1;
 }
 
 
 /** Converting data from Uartdata
-  * Convert data from uartdata to structure
-    player/ball
-  * Kick check needed
-  * Still need kick check
  */
 int read_uartdata()
 {
-  struct uartdata d_uartdata;       
-  unsigned char d_dir,d_spd;
-  unsigned d_x,d_y;
-  unsigned char d_team_id,d_player_id;
-  unsigned char d_kick;
-  int message_count[2] = {0,0};
-  int i,j,k,ret;  
-  while (msgqueue_recv(&d_uartdata))
-  {
-    /** convert to structure of general definition */
-    
-    //Assume that the first bit (indicating the packet type) first at data[0]
-    d_team_id = (d_uartdata.data[0] & 0x20) / 32;    
-    
-    //Make sure that no one team will crowded the message queue
-    message_count[d_team_id] = message_count[d_team_id] + 1;
-    if (message_count[d_team_id] > MAX_MESSAGE_COUNT) break;//continue;
-	if ((d_uartdata.data[0] > 7) == 1)
-	{
-	   // Process as the Initial position packet
-	   // Get from the packet
-       d_player_id = (d_uartdata.data[0] & 0x1E) / 2;
-       d_x = (d_uartdata.data[0] & 0x01) * 512
-           + (d_uartdata.data[1]) * 2
-           + (d_uartdata.data[2] & 0x80) / 128;
-       d_y = (d_uartdata.data[2] & 0x7F) * 8
-           + (d_uartdata.data[3] & 0xE0) / 32;
-       
-       d_x = d_x * CONST_PROP;
-       d_y = d_y * CONST_PROP;
-       
-       // Put to respective data structure
-       d_team[d_team_id].player[d_player_id].x_pos = d_x;
-       d_team[d_team_id].player[d_player_id].y_pos = d_y;       
-       d_team[d_team_id].player[d_player_id].direction = 0;      
-       d_team[d_team_id].player[d_player_id].speed = 0;
-    }
+	return 1;
+
+}
+
+/** Send Position and display Data to Mailbox
+ */
+int send_Mailbox(GameState gs)
+{
+	int ret,i,j;
+	GameMessage game_msg;
+
+	game_msg.pos[0]=gs.ball.x_pos;
+	game_msg.pos[1]=gs.ball.y_pos;
+	for (i = 0; i < 2; i++)
+		for (j = 0; j < 5; j++)
+  		{
+			game_msg.pos[10*i+2*j+2]=gs.players[i][j].x_pos;
+			game_msg.pos[10*i+2*j+3]=gs.players[i][j].y_pos;
+ 		}
+		
+	print("\rControlling: start to send message!!\r\n");
+	game_msg.special=gs.special;
+	xil_printf(" Size of structure : %d    \r\n",sizeof(game_msg.special));
+	ret = XMbox_IsEmpty(&mbox);
+		
+	if (ret == 0) XMbox_WriteBlocking(&mbox, (u32*)(&game_msg.special), sizeof(game_msg.special));
+   if(ret!=0)
+	{	
+		print("\rERROR!! mailbox not empty \r\n");
+	}
 	else
 	{
-       d_kick = (d_uartdata.data[0] & 0x40) / 64;
-       d_player_id = (d_uartdata.data[0] & 0x1E) / 2;
-       d_dir = (d_uartdata.data[0] & 0x01) * 8
-             + (d_uartdata.data[1] & 0xE0) / 32;
-       d_spd = (d_uartdata.data[1] & 0x1E) / 2;
-	   // Process as the update packet
-       d_team[d_team_id].player[d_player_id].direction = d_dir;      
-       d_team[d_team_id].player[d_player_id].speed = d_spd;	   
-       d_team[d_team_id].player[d_player_id].kick = d_kick;	   
-    }
-  }
-  return 1;
+		print("\rSend Message successfully !!\r\n");
+	}
+	return 1;
 }
  
  
  
-//int controller_main()
+//int controller_update()
 int main()
 {
-  struct uartdata d_uartdata;
-  int ret;
-  /** read from message queue */
-  ret = read_uartdata();
-  /** Check if there's a foul or other status */
+  int ret,i,j;
+  unsigned char mirror_dir;
+  //** read from message queue 
   
-  /** Calculate the new position and speed and anything else */
-  cal_parameter();  
-  /** Send data back to uartlite portal */
-  ret = send_uartdata();
+  /*Initialize mailbox*/
+   
+ ConfigPtr = XMbox_LookupConfig(XPAR_MBOX_0_DEVICE_ID );
+  if (ConfigPtr == (XMbox_Config *)NULL){
+		xil_printf ("\tLookupConfig Failed.\r\n");
+		return XST_FAILURE;
+	}
+	
+	status = XMbox_CfgInitialize(&mbox, ConfigPtr, ConfigPtr->BaseAddress);
+	if (status != XST_SUCCESS){
+		xil_printf ("\tXMbox_CfgInitialize Failed.\r\n");
+		return status;
+	}
+  
+  //ret = read_uartdata();
+  //** Check if there's a foul or other status 
+  //check_fouls();
+  //** Calculate the new position and speed and anything else 
+  //** In this part also calculate all the necessary package.
+  //cal_parameter();  
+  //** Send data back to uartlite portal and at the same time mailbox to TFT
+  
+  		local_gs.ball.x_pos=100;
+		local_gs.ball.y_pos=100;
+		
 
-  /** timer interrupt --> call mailbox send data */
+	for (i = 0; i < 2; i++)
+	      for (j = 0; j < 5; j++)
+  		{
+			local_gs.players[i][j].x_pos=200;
+			local_gs.players[i][j].y_pos=300;
+ 		}
+		
+		local_gs.special=1;
+
+  //ret = send_uartdata();
+  ret = send_Mailbox(local_gs);
+  //** timer interrupt --> call mailbox send data 
 } 
+
+
+int controller_init()
+{
+  //** Function execute when interrupt of Push_Button Comes 
+  int ret;
+  
+  //** Send uartdata control frame */
+  ret = send_uartdata(uart_control_signal);
+
+  //** read from message queue 
+  ret = read_uartdata();
+  
+  //** Changing the initial position of players 
+  ret = send_Mailbox(local_gs);
+  //** Wait for Push_Button from Player_Side
+  while (1)
+  {
+    ret = read_uartdata();  
+    //** Check if there is a Push_Button Issue from Player Side 
+  } 
+  //** Began the game (Here, the timer starts)
+}

@@ -21,29 +21,51 @@
 #define BLUE 0x000000ff
 
 
-struct player
-{
-	unsigned x_pos, y_pos;
-	unsigned char direction;
-	unsigned char speed;
-	unsigned char kick;
-};
 
-struct ball
-{
-	unsigned  x_pos, y_pos;
-	unsigned char direction;
-	unsigned char speed;
-};
+/*DATA STRUCTURE FOR THE PLAYERS. The structure members are based on the communication protocol given to us.
+* Im thinking that each player should be able to change his values, and then a specific function can be written that
+* takes the structure and converts into a 32bit vector like in the communication protocol. This vector will then be
+* sent to the server.
+*/
 
-struct game_state
+typedef int SpecialEvent;
+typedef struct
 {
-	struct ball ball_state;
-};
+        unsigned x_pos, y_pos;
+        unsigned char direction;
+        unsigned char speed;
+        unsigned char kick_direction; //changed :)
+        unsigned char kick_speed;
+}
+Player;
 
-struct uartdata
+typedef struct
 {
-    unsigned char data[4];
-};
+        unsigned  x_pos, y_pos;
+        unsigned char direction;
+        unsigned char speed;
+}
+Ball;
+
+typedef Player Team[5]; //strange syntax but probably correct
+
+typedef struct
+{
+        Ball ball;
+        Team players[2];
+        SpecialEvent special;
+}
+GameState;
+
+
+
+// Structure to send to Mailbox
+
+typedef struct
+{
+        int pos[22];
+        SpecialEvent special;
+}
+GameMessage;
 
 #endif
