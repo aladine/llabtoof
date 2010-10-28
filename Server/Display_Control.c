@@ -5,100 +5,36 @@
 #include <errno.h>
 #include "xmbox.h"
 #include "display.h"
+#include "timer.h"
 #include "controlling.h"
 #include "xintc.h"
-#define TFT_DEVICE_ID XPAR_XPS_TFT_0_DEVICE_ID
+#include "xtmrctr.h"
+#include "xil_exception.h"
 
-#define DISPLAY_COLUMNS  640
-#define DISPLAY_ROWS     480
+/*TIMER*/
+#define TMRCTR_DEVICE_ID        XPAR_TMRCTR_0_DEVICE_ID
+#define INTC_DEVICE_ID          XPAR_INTC_0_DEVICE_ID
+#define TIMER_COUNTER_0	 0
+
+/*MAILBOX*/
 #define PCK_SIZE         16
-#define GREEN 0x0000ff00
-#define RED 0x00ff0000
-#define YELLOW 0x000000ff
 
-#define BLUE 0x000000ff
-#define WHITE 0x00ffffff
-#define BLACK 0x00000000
+/*TIMER*/
+//static XGpio myGpio;
+static XTmrCtr myTimer;
+static XIntc myIntc;
 
-#define TEAM_A 0
-#define TEAM_B 1
-static XTft TftInstance;
-
-
+/*MAILBOX*/
 XMbox xmbox;
 XMbox_Config *xmbox_ConfigPtr;
-
 int rcvmsg[PCK_SIZE];
 int rcvd;
-int scoreA,foulA,scoreB,foulB;
+
+/*GAME STATE*/
 GameState local_gs;
 GameState prev_gs;
-/*
 
-typedef int SpecialEvent;
-typedef struct
-{
-        unsigned x_pos, y_pos;
-        unsigned char direction;
-        unsigned char speed;
-        unsigned char kick_direction; //changed :)
-        unsigned char kick_speed;
-}
-Player;
-
-typedef struct
-{
-        unsigned  x_pos, y_pos;
-        unsigned char direction;
-        unsigned char speed;
-}
-Ball;
-
-typedef Player Team[5]; //strange syntax but probably correct
-
-typedef struct
-{
-        Ball ball;
-        Team players[2];
-        SpecialEvent special;
-}
-GameState;
-
-*/
-volatile int taskrunning;
-
-
-void tft_display_team(XTft *Tft,GameState gs,int j,int col)
-{
-	int i;
-	for (i=0;i++;i<5)
-	Draw_Player(Tft,gs.players[j][i].x_pos,gs.players[j][i].x_pos,col);
-}
-
-void tft_displaycontrol(XTft *Tft)
-{
-	tft_display_team(Tft,local_gs,TEAM_A,BLUE);
-	tft_display_team(Tft,local_gs,TEAM_B,YELLOW);
-	Draw_Ball(Tft,local_gs.ball.x_pos,local_gs.ball.y_pos,GREEN);
-}
-
-void tft_clear(XTft *Tft,GameState gs)
-{
-	tft_display_team(Tft,gs,TEAM_A,BLACK);
-	tft_display_team(Tft,gs,TEAM_B,BLACK);
-	Draw_Ball(Tft,gs.ball.x_pos,gs.ball.y_pos,BLACK);
-}
-
-void display_score(XTft *Tft,SpecialEvent sp)
-{
-	//GameState.game_time = sp % 0x0400;
-  scoreA +=  sp / 0x8000;
-  scoreB +=  sp / 0x4000 % 0x8000;    
-  foulA  +=  sp / 0x2000 % 0x4000;        
-  foulB +=  sp / 0x1000 % 0x2000; 
-  tft_display_score(Tft,scoreA,foulA,scoreB,foulB); 
-}
-void control() {
+void update_MailBox() {
   int ret,i,j;
   while(1) 
   {    
@@ -109,7 +45,6 @@ void control() {
 		int nbytes = 0;		
 		while (nbytes < PCK_SIZE) 
 		{
-		
 		  (void)XMbox_Read(&xmbox, (u32*)(rcvmsg + nbytes), PCK_SIZE - nbytes, &rcvd);
 		  nbytes += rcvd;
 		}
@@ -117,11 +52,7 @@ void control() {
 		if (ret == 0) print("asdf");
 		//prev_gs=local_gs;
 		local_gs.ball.x_pos=rcvmsg[0];
-				print("Display: Received from Processor 1 ");
-
 		local_gs.ball.y_pos=rcvmsg[1];
-		
-
 	for (i = 0; i < 2; i++)
 	      for (j = 0; j < 5; j++)
   		{
@@ -131,11 +62,6 @@ void control() {
 		
 		local_gs.special=rcvmsg[22];
 		print("Display: Received from Processor 1 ");
-		
-	//tft_clear(&TftInstance,prev_gs);
-
-	// tft_displaycontrol(&TftInstance);
-	 print("-- Screen Cleared --\r\n");
 	 
 		
 	 /* end of mailbox */
@@ -144,17 +70,87 @@ void control() {
   
 }
 
+volatile int TimerExpired;
 
+void timer_handler(void * baseaddr_p) {
+    Xuint32 csr;
+    csr = XTmrCtr_GetControlStatusReg(XPAR_XPS_TIMER_0_BASEADDR, 0);
+    if (csr) 
+    {
+        TimerExpired++;
+		  
+		  count_down(&TftInstance,TimerExpired);
+		 // tft_clear(&TftInstance,prev_gs);
+	    // tft_displaycontrol(&TftInstance,local_gs);
+	     print("-- Update successful --\r\n");
+    }
+	 XTmrCtr_SetControlStatusReg(XPAR_XPS_TIMER_0_BASEADDR, 0, csr);
+}
+	
+int TimerSetup(XIntc* myIntc,
+				XTmrCtr* myTimer,u16 DeviceId,u16 IntrId,u8 TmrCtrNumber)
+
+{	
+	int LastTimerExpired=0;
+	//Initialize and configuring the timer
+	XTmrCtr_Initialize(myTimer, DeviceId);
+	XTmrCtr_SelfTest(myTimer, TmrCtrNumber);
+	XTmrCtr_SetOptions(myTimer,TmrCtrNumber,XTC_INT_MODE_OPTION | XTC_DOWN_COUNT_OPTION | XTC_AUTO_RELOAD_OPTION);
+	
+	//*************** Interrupt controller initialization and configuration ******************
+	xil_printf("Setting up interrupt controller...\r\n");
+	XIntc_Initialize(myIntc, IntrId);
+	XIntc_Connect(myIntc, IntrId,(XInterruptHandler)timer_handler,
+                           myTimer);					
+	XTmrCtr_SetHandler(myTimer,(XTmrCtr_Handler)timer_handler,NULL); 
+
+	/*Initialize and configure the push buttons
+	XGpio_Initialize(&myGpio, XPAR_BUTTONS_3BIT_DEVICE_ID);
+
+	XGpio_SetDataDirection(&myGpio, 1, 0x3);
+	XGpio_InterruptEnable(&myGpio, XPAR_BUTTONS_3BIT_IP2INTC_IRPT_MASK);
+	XGpio_InterruptGlobalEnable(&myGpio);
+
+	XIntc_Connect(&myIntc, XPAR_INTC_0_GPIO_0_VEC_ID,
+                           (XInterruptHandler)pb_int_handler,
+                           &myGpio);
+								
+	*/								
+	XIntc_Start(myIntc, XIN_REAL_MODE);
+	//XIntc_Enable(&myIntc, XPAR_INTC_0_GPIO_0_VEC_ID);
+	XIntc_Enable(myIntc, IntrId);
+
+
+	Xil_ExceptionInit();
+	Xil_ExceptionRegisterHandler(XIL_EXCEPTION_ID_INT,
+					(Xil_ExceptionHandler)
+					XIntc_InterruptHandler,
+					myIntc);
+	Xil_ExceptionEnable();
+
+
+	
+	XTmrCtr_SetResetValue(myTimer,TmrCtrNumber,RESET_VALUE );
+	XTmrCtr_Start(myTimer, TmrCtrNumber);
+	
+	
+	xil_printf("Entering loop...\r\n");
+	while(1){
+	
+		 			xil_printf("Loop %d  \r\n",TimerExpired);
+           //count_down(&TftInstance,TimerExpired);
+		while (TimerExpired == LastTimerExpired) {
+		}
+		LastTimerExpired = TimerExpired;
+	}
+}
 
 
 int main (void) 
 {
-
- int ret;
-  
+  int ret; 
   print("-- Entering main() --\r\n");
   
-  print("--Initialized --\r\n");
 
   /* * Init of XTFT Device */
   XStatus Status;
@@ -182,16 +178,12 @@ int main (void)
       print("\r Failed 2 \r\n");
 		return XST_FAILURE;
   }
-   // print("-- Screen Cleared --\r\n");
   /* * End of Init XTFT Device */
   
  Init(&TftInstance);
  display_score(&TftInstance, local_gs.special);
-  
-  print("\r Success 2 \r\n");
- // XTft_ClearScreen(&TftInstance);
+ //count_down 
 
-  
   /* * Init of XMailbox */
   xmbox_ConfigPtr = XMbox_LookupConfig(XPAR_MBOX_0_DEVICE_ID );
   if (xmbox_ConfigPtr == (XMbox_Config *)NULL){
@@ -206,16 +198,11 @@ int main (void)
 	}
    /* * End of init XMbox */
 	
-	XMbox_Flush(&xmbox); 
-
+	ret= TimerSetup(&myIntc,
+				&myTimer,TMRCTR_DEVICE_ID,INTC_DEVICE_ID,TIMER_COUNTER_0);
 	
-	
-
-
-	
-
-	
-control();
+	//XMbox_Flush(&xmbox); 
+   update_MailBox();
 
 
 
