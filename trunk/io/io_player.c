@@ -20,6 +20,8 @@
 #include "io_player.h"
 #include "xparameters.h"
 
+#define PACKET_BUFFER_SIZE 11	// 5 players from each team + 1 ball = 11 packets
+
 //
 // Private functions prototypes
 //
@@ -28,9 +30,9 @@ void IOPlayer_sendInitPos(IOPlayermanager * io, GameState* state);
 void IOPlayer_sendUpdate(IOPlayermanager * io, GameState* state);
 
 void IOPlayer_receive(IOPlayermanager * player, char* input);
-void IOPlayer_recieveInfoPlayer(IOPlayermanager * player, char* input);
-void IOPlayer_recieveInfoBall(IOPlayermanager * player, char* input);
-void IOPlayer_recieveControl(IOPlayermanager * player, char* input);
+void IOPlayer_receiveInfoPlayer(IOPlayermanager * player, char* input);
+void IOPlayer_receiveInfoBall(IOPlayermanager * player, char* input);
+void IOPlayer_receiveControl(IOPlayermanager * player, char* input);
 
 //
 // Functions
@@ -44,9 +46,24 @@ void IOPlayer_init(IOPlayermanager * player, TeamID team, IOmanager_cb callback)
 	player->team = team;
 	
 	player->started = 0;
+	player->received = 0;
 	
-	IO_send(&(player->io), "PLIN");
-	IO_send(&(player->io), "IT\r\n");
+	//Initialize the input GameState buffer
+	char i;
+	for(i=0; i<5; i++)
+	{
+		player->input.players[TEAM_A][i].x_pos = 0;
+		player->input.players[TEAM_A][i].y_pos = 0;
+		player->input.players[TEAM_B][i].x_pos = 0;
+		player->input.players[TEAM_B][i].y_pos = 0;
+	}
+	player->input.ball.x_pos = 0;
+	player->input.ball.y_pos = 0;
+	player->input.ball.direction = 0;
+	player->input.ball.speed = 0;
+	
+	/*IO_send(&(player->io), "PLIN");
+	IO_send(&(player->io), "IT\r\n");*/
 }
 
 /*	void IOPlayer_send(IOmanager * io, GameState * output) : Checks if the io is of type player or server.
@@ -128,63 +145,45 @@ void IOPlayer_sendUpdate(IOPlayermanager * player, GameState* state)
 
 void IOPlayer_receive(IOPlayermanager * player, char* input)
 {
-
-	IO_send(&(player->io), "PLRE");
-	IO_send(&(player->io), "CV!\n");
-		
-	//Here convert packet (input) to sructure (player->input)
-	
 	//Determinate packet type
 	char infocontrol = (input[0] & (0x80))?1:0;	// 0x80 = 0b10000000
-	/*
-	char ic_debug[4] = "PKIX";
-	if(infocontrol) ic_debug[3] = '1';
-	else ic_debug[3] = '0';*/
-	
-	IO_send(&(player->io), input);
 	
 	if(infocontrol == INFO)
 	{
 		char playerball = (input[0] & (0x20))?1:0;	// 0x20 = 0b00100000
 
 		if(playerball == PLAYER)
-			IOPlayer_recieveInfoPlayer(player, input);
-		else
-			IOPlayer_recieveInfoBall(player, input);
+			IOPlayer_receiveInfoPlayer(player, input);
+		else //playerball = BALL
+			IOPlayer_receiveInfoBall(player, input);
+		
+		player->received++;
+		if(player->received == PACKET_BUFFER_SIZE)
+			player->callback(&(player->input));
 	}
-	else
-		IOPlayer_recieveControl(player, input);
-
-	IO_send(&(player->io), "\0\0\0\0");
-	player->callback(&(player->input));
+	else //infocontrol = CONTROL
+	{
+		IOPlayer_receiveControl(player, input);
+		player->callback(&(player->input));
+	}
 }
 
-void IOPlayer_recieveInfoPlayer(IOPlayermanager * player, char* input)
+void IOPlayer_receiveInfoPlayer(IOPlayermanager * player, char* input)
 {
-	IO_send(&(player->io), "IFP\n");
-
 	//cast "raw" packet to the appropriate structure
 	IOPacketS2P_info_player * packet = (IOPacketS2P_info_player *) input;
 	
-	IO_send(&(player->io), "IFP\n");
-	
-	//GameState * input = &(player->input);
-
 	TeamID team = packet->teamid;
 	
-	IO_send(&(player->io), "IFP\n");
+	xil_printf("\r\n  Recu: teamid=%d   \r\n", team);
 	
 	Player * f_player = &(player->input.players[team][packet->playerid]);
 	
-	IO_send(&(player->io), "IFP\n");
-
 	f_player->x_pos = packet->xpos;
 	f_player->y_pos = packet->ypos;
-	
-	
 }
 
-void IOPlayer_recieveInfoBall(IOPlayermanager * player, char* input)
+void IOPlayer_receiveInfoBall(IOPlayermanager * player, char* input)
 {
 	//cast "raw" packet to the appropriate structure
 	IOPacketS2P_info_ball * packet = (IOPacketS2P_info_ball *) input;
@@ -197,7 +196,7 @@ void IOPlayer_recieveInfoBall(IOPlayermanager * player, char* input)
 	ball->speed = packet->speed;
 }
 
-void IOPlayer_recieveControl(IOPlayermanager * player, char* input)
+void IOPlayer_receiveControl(IOPlayermanager * player, char* input)
 {
 	//cast "raw" packet to the appropriate structure
 	IOPacketS2P_control* packet = (IOPacketS2P_control *)input;

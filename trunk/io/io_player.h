@@ -32,6 +32,8 @@ typedef struct
 
 	TeamID team;
 	bool started;
+	
+	char received;
 }
 IOPlayermanager;
 
