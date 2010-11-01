@@ -69,21 +69,17 @@ void IO_send(IOmanager * io, void * data)
  * We use a baud-rate of 115200 bps = 14400 Bps
  * This means that the buffer takes a maximum of 1.11ms to be filled
  * So we can sleep for 1ms between each check.
- *
  */
 void IO_inputThread(IOmanager * io)
 {
 	if(!io) return;
 
 	char i;
-
 	char received = 0,
-		 total = 0;
+		  total = 0;
 
 	for(i=0; i<4; i++) io->input_buffer[i] = 0;	//empty input buffer
 	
-	//IO_send(io, "TH\r\n");
-
 	//main pooling thread
 	while(1)
 	{
@@ -92,9 +88,8 @@ void IO_inputThread(IOmanager * io)
 
 		if(total == 4)
 		{
-			//IO_send(io, "R!\r\n");
-			io->callback(io->callback_arg, io->input_buffer);	//empty input buffer
-			for(i=0; i<4; i++) io->input_buffer[i] = 0;
+			io->callback(io->callback_arg, io->input_buffer);
+			//for(i=0; i<4; i++) io->input_buffer[i] = 0;	//empty input buffer
 			total = 0;
 		}
 
