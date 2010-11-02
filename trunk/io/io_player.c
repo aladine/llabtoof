@@ -1,7 +1,7 @@
 /* io_player.c -- io convertion functions for server
  *
  * Copyright 2010 Per Kristian Kjoell <a0075664@nus.edu.sg>
- * Copyright 2010 Adrien BÃ©raud <adrienberaud@gmail.com>
+ * Copyright 2010 Adrien Béraud <adrienberaud@gmail.com>
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -41,13 +41,13 @@ void IOPlayer_receiveControl(IOPlayermanager * player, char* input);
 void IOPlayer_init(IOPlayermanager * player, TeamID team, IOmanager_cb callback)
 {
 	IO_init(&(player->io), XPAR_UARTLITE_1_DEVICE_ID, (IO_cb)IOPlayer_receive, (void*)player);
-	
+
 	player->callback = callback;
 	player->team = team;
-	
+
 	player->started = 0;
 	player->received = 0;
-	
+
 	//Initialize the input GameState buffer
 	char i;
 	for(i=0; i<5; i++)
@@ -61,7 +61,7 @@ void IOPlayer_init(IOPlayermanager * player, TeamID team, IOmanager_cb callback)
 	player->input.ball.y_pos = 0;
 	player->input.ball.direction = 0;
 	player->input.ball.speed = 0;
-	
+
 	/*IO_send(&(player->io), "PLIN");
 	IO_send(&(player->io), "IT\r\n");*/
 }
@@ -89,18 +89,18 @@ void IOPlayer_send(IOPlayermanager * player, GameState * output)
 void IOPlayer_sendInitPos(IOPlayermanager * player, GameState* state)
 {
 	unsigned char i;
-	IOPacketP2S_initial packet[5];
+	IOPacketP2S_initial packet;
 	Player * player_tmp;
-	
+
 	for(i=0; i<5; i++)
 	{
-		packet[i].packet_type = INITIAL_POSITION;
-		packet[i].teamid = player->team;
+		packet.packet_type = INITIAL_POSITION;
+		packet.teamid = player->team;
 		player_tmp = &(state->players[player->team][i]);
-		packet[i].xpos = player_tmp->x_pos;
-		packet[i].ypos = player_tmp->y_pos;
+		packet.xpos = player_tmp->x_pos;
+		packet.ypos = player_tmp->y_pos;
 
-		IO_send(&(player->io), (void*)(&packet[i]));
+		IO_send(&(player->io), (void*)(&packet));
 	}
 
 	player->started = 1; //there is no bool but true/false is occpupied so TRIIICK.
@@ -112,13 +112,13 @@ void IOPlayer_sendUpdate(IOPlayermanager * player, GameState* state)
 	unsigned char i;
 	IOPacketP2S_update packet;
 	Player * player_tmp;
-	
+
 	for(i=0; i<5; i++)
 	{
 		player_tmp = &(state->players[player->team][i]);
-		
+
 		packet.packet_type = UPDATE;
-		
+
 		packet.teamid = player->team;
 		packet.playerid = i;
 
@@ -134,7 +134,7 @@ void IOPlayer_sendUpdate(IOPlayermanager * player, GameState* state)
 			packet.direction = player_tmp->kick_direction;
 			packet.speed = player_tmp->kick_speed;
 		}
-		
+
 		IO_send(&(player->io), (void*)(&packet)); //passes the address of io like this ?
 	}
 }
@@ -147,7 +147,7 @@ void IOPlayer_receive(IOPlayermanager * player, char* input)
 {
 	//Determinate packet type
 	char infocontrol = (input[0] & (0x80))?1:0;	// 0x80 = 0b10000000
-	
+
 	if(infocontrol == INFO)
 	{
 		char playerball = (input[0] & (0x20))?1:0;	// 0x20 = 0b00100000
@@ -156,7 +156,7 @@ void IOPlayer_receive(IOPlayermanager * player, char* input)
 			IOPlayer_receiveInfoPlayer(player, input);
 		else //playerball = BALL
 			IOPlayer_receiveInfoBall(player, input);
-		
+
 		player->received++;
 		if(player->received == PACKET_BUFFER_SIZE)
 			player->callback(&(player->input));
@@ -172,13 +172,13 @@ void IOPlayer_receiveInfoPlayer(IOPlayermanager * player, char* input)
 {
 	//cast "raw" packet to the appropriate structure
 	IOPacketS2P_info_player * packet = (IOPacketS2P_info_player *) input;
-	
+
 	TeamID team = packet->teamid;
-	
+
 	xil_printf("\r\n  Recu: teamid=%d   \r\n", team);
-	
+
 	Player * f_player = &(player->input.players[team][packet->playerid]);
-	
+
 	f_player->x_pos = packet->xpos;
 	f_player->y_pos = packet->ypos;
 }
