@@ -20,11 +20,13 @@
 #include "io.h"
 #include "io_server.h"
 
+#include "xparameters.h"
+
 //
 // Private functions prototypes
 //
 
-void IOServer_receive(IOServermanager * server, void * input);
+void IOServer_receive(struct io_server_callback_return * server_t, char * input);
 
 void IOServer_sendPacket(IOServermanager * server, void * output);
 void IOServer_SendControl(IOServermanager * server, GameState * state);
@@ -38,22 +40,22 @@ void IOServer_init(IOServermanager * server, IOmanager_cb callback)
 {
 	server->return_v[0].server = server;
 	server->return_v[1].server = server;
-	server->return_v[0].teamid = TEAM_A;
-	server->return_v[1].teamid = TEAM_B;
+	server->return_v[0].team = TEAM_A;
+	server->return_v[1].team = TEAM_B;
 
 	char i;
 	for(i=0; i<5; i++)
 	{
-		player->input.players[TEAM_A][i].direction = 0;
-		player->input.players[TEAM_A][i].speed = 0;
-		player->input.players[TEAM_A][i].kick_speed = 0;
-		player->input.players[TEAM_B][i].direction = 0;
-		player->input.players[TEAM_B][i].speed = 0;
-		player->input.players[TEAM_B][i].kick_speed = 0;
+		server->input.players[TEAM_A][i].direction = 0;
+		server->input.players[TEAM_A][i].speed = 0;
+		server->input.players[TEAM_A][i].kick_speed = 0;
+		server->input.players[TEAM_B][i].direction = 0;
+		server->input.players[TEAM_B][i].speed = 0;
+		server->input.players[TEAM_B][i].kick_speed = 0;
 	}
 
-	IO_init(&(server->io[0]), XPAR_UARTLITE_1_DEVICE_ID, (IO_cb)IOServer_receive, (void*)(&(server->return_v[0])));	//init IO for team A
-	IO_init(&(server->io[1]), XPAR_UARTLITE_2_DEVICE_ID, (IO_cb)IOServer_receive, (void*)(&(server->return_v[1])));	//init IO for team B
+	IO_init(&(server->io[0]), XPAR_UARTLITE_0_DEVICE_ID, (IO_cb)IOServer_receive, (void*)(&(server->return_v[0])));	//init IO for team A
+	IO_init(&(server->io[1]), XPAR_UARTLITE_1_DEVICE_ID, (IO_cb)IOServer_receive, (void*)(&(server->return_v[1])));	//init IO for team B
 	server->callback = callback;
 
 	server->started = 0;
@@ -61,14 +63,14 @@ void IOServer_init(IOServermanager * server, IOmanager_cb callback)
 	server->received[1] = 5;
 }
 
-void IOServer_receive(struct io_server_callback_return * server_t, void * input)
+void IOServer_receive(struct io_server_callback_return * server_t, char * input)
 {
 	IOServermanager * server = server_t->server;
-	IOTeamID team = server_t->team;
+	TeamID team = server_t->team;
 
 	//Here convert packet (input) to structure (server->input)
 
-	if(input[0] & (0b10000000)) //bit 31 = 1 => initial packet
+	if(input[0] & 0x80) //bit 31 = 1 => initial packet, 0x80 = 0b10000000
 	{
 		//cast "raw" packet to the appropriate structure.
 		IOPacketP2S_initial * packet = (IOPacketP2S_initial *) input;
@@ -88,7 +90,7 @@ void IOServer_receive(struct io_server_callback_return * server_t, void * input)
 		IOPacketP2S_update * packet = (IOPacketP2S_update *) input;
 		Player * player = &(server->input.players[team][packet->playerid]);
 
-		if(input & (0x40000000)) //bit 30 = 1 => kick
+		if(input[0] & 0x40) //bit 30 = 1 => kick
 		{
 			player->kick_speed = packet->speed;
 			player->kick_direction = packet->direction;
@@ -106,7 +108,7 @@ void IOServer_receive(struct io_server_callback_return * server_t, void * input)
 
 	if(server->started && server->received[0] == 5 && server->received[1] == 5)
 	{
-		server->callback(server->input);
+		server->callback(&(server->input));
 		server->received[0] = 0;
 		server->received[1] = 5;
 	}
@@ -138,11 +140,12 @@ void IOServer_SendControl(IOServermanager * server, GameState * state)
 {
 	IOPacketS2P_control packet;
 
+	//TODO : update the struture to have the team inormation
 	packet.packet_type = CONTROL;
-	packet.teamid = io->teamid;
+	packet.teamid = TEAM_A;
 	packet.foulgoal = state->special;
 
-	IOServer_sendPacket(server, (void*)(&packet))
+	IOServer_sendPacket(server, (void*)(&packet));
 }
 
 
@@ -150,6 +153,7 @@ void IOServer_sendInfoPlayers(IOServermanager * server, GameState * state, TeamI
 {
 	IOPacketS2P_info_player player_packet;
 	Player * tmp_player;
+	char i;
 
 	//First send the players.
 	for(i=0; i<5; i++)
@@ -180,10 +184,10 @@ void IOServer_SendInfo(IOServermanager * server, GameState * state)
 	//Then send the ball.
 	ball_packet.packet_type = INFO;
 	ball_packet.playerball = BALL;
-	ball_packet.direction = state->ball_state.direction;
-	ball_packet.speed = state->ball_state.speed;
-	ball_packet.xpos = state->ball_state.x_pos;
-	ball_packet.ypos = state->ball_state.y_pos;
+	ball_packet.direction = state->ball.direction;
+	ball_packet.speed = state->ball.speed;
+	ball_packet.xpos = state->ball.x_pos;
+	ball_packet.ypos = state->ball.y_pos;
 
 	IOServer_sendPacket(server, (void*)(&ball_packet));
 }

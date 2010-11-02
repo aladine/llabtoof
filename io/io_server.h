@@ -29,7 +29,7 @@ typedef struct io_server_manager IOServermanager;
 struct io_server_callback_return
 {
 	IOServermanager * server;
-	IOTeamID team;
+	TeamID team;
 };
 
 struct io_server_manager
