@@ -2,10 +2,8 @@
 
 #include <stdio.h>
 
-#include "xparameters.h"
 #include "structures.h"
 #include "io/io_server.h"
-#include "xstatus.h"
 IOServermanager server;
 
 GameState output;
