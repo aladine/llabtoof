@@ -1,14 +1,12 @@
-
-
 #include "xmk.h"
 
 #include <stdio.h>
 
-//#include "xparameters.h"
+#include "xparameters.h"
 #include "structures.h"
-#include "io/io_player.h"
-
-IOPlayermanager player;
+#include "io/io_server.h"
+#include "xstatus.h"
+IOServermanager server;
 
 GameState output;
 
@@ -21,7 +19,7 @@ int main(){
 
 void callback(GameState* state)
 {
-	char i;
+/*	char i;
 	Player * pl_in;
 	Player * pl_out;
 	Ball * ball;
@@ -40,6 +38,8 @@ void callback(GameState* state)
 
 	ball = &(state->ball);
 	xil_printf("\n  Ball : x=%d y=%d direction=%d speed=%d \n", ball->x_pos, ball->y_pos, ball->direction, ball->speed);
+	*/
+
 }
 
 void main_prog()
@@ -60,7 +60,7 @@ void main_prog()
 	output.ball.direction = 0;
 	output.ball.speed = 0;
 
-	IOPlayer_init(&player, TEAM_A, callback);
+	IOServer_init(&server, callback);
 
 	xil_printf("\n  Coucou   \n");
 
