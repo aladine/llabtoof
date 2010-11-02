@@ -20,6 +20,9 @@
 #ifndef IO_SERVER_H
 #define IO_SERVER_H
 
+#include "io_structures.h"
+#include "io.h"
+
 typedef struct io_server_manager IOServermanager;
 
 //structure used to differentiate the two IOmanagers in the callback function
