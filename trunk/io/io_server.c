@@ -58,7 +58,7 @@ void IOServer_init(IOServermanager * server, IOmanager_cb callback)
 
 	server->started = 0;
 	server->received[0] = 0;
-	server->received[1] = 0;
+	server->received[1] = 5;
 }
 
 void IOServer_receive(struct io_server_callback_return * server_t, void * input)
@@ -108,7 +108,7 @@ void IOServer_receive(struct io_server_callback_return * server_t, void * input)
 	{
 		server->callback(server->input);
 		server->received[0] = 0;
-		server->received[1] = 0;
+		server->received[1] = 5;
 	}
 }
 
