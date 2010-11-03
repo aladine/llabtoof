@@ -27,6 +27,7 @@
 
 
 #define PACKET_SIZE 4	// 4 bytes is 32 bits
+#define BUFFER_SIZE PACKET_SIZE*16
 
 typedef void (*IO_cb)(void*, char*);
 
@@ -37,7 +38,7 @@ typedef struct
 	IO_cb callback;				// Callback function called when data is received
 	void* callback_arg;
 
-	char input_buffer[PACKET_SIZE];
+	char input_buffer[BUFFER_SIZE];
 
 	pthread_t input_t;			// Pooling thread (checking for new stuff on input);
 }
