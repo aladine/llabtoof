@@ -78,27 +78,24 @@ void IO_inputThread(IOmanager * io)
 	char received = 0,
 		  total = 0;
 
-	for(i=0; i<4; i++) io->input_buffer[i] = 0;	//empty input buffer
+	for(i=0; i<BUFFER_SIZE; i++) io->input_buffer[i] = 0;	//empty input buffer
+	
+	char ib_start = 0, 
+		 ib_size = 0;
 	
 	//main pooling thread
 	while(1)
 	{
-		received = XUartLite_Recv(&(io->uartlite), io->input_buffer+total, PACKET_SIZE-total);
-		total += received;
+		received = XUartLite_Recv(&(io->uartlite), io->input_buffer+((ib_start+ib_size)%BUFFER_SIZE), BUFFER_SIZE-((ib_start+ib_size)%BUFFER_SIZE));
+		ib_size += received;
 
-		if(total == 4)
+		while(ib_size >= PACKET_SIZE)
 		{
-			io->callback(io->callback_arg, io->input_buffer);
-			//for(i=0; i<4; i++) io->input_buffer[i] = 0;	//empty input buffer
-			total = 0;
+			io->callback(io->callback_arg, io->input_buffer+(ib_start%BUFFER_SIZE));
+			ib_start += PACKET_SIZE;
+			ib_size -= PACKET_SIZE;
 		}
 
-		if(!received) 
-		{
-			//usleep(1000); //sleep for 1ms if there is no activity
-			unsigned j;
-			for(j=0; j<200; j++) {asm("nop");asm("nop");}
-		}
 	}
 }
 
