@@ -40,11 +40,17 @@ void IO_init(IOmanager * io, u16 device_id, IO_cb callback, void* callback_arg)
 	io->callback_arg = callback_arg;
 
 	status = XUartLite_Initialize(&(io->uartlite), device_id);
-	if(status != XST_SUCCESS) return;
-
+	if(status != XST_SUCCESS) 
+	{
+		xil_printf(" Error : Xuartlite_initialize failed. Code : %d",status);
+		return;
+	}
 	status = XUartLite_SelfTest(&(io->uartlite));
-	if(status != XST_SUCCESS) return;
-
+	if(status != XST_SUCCESS)
+	{
+		xil_printf(" Error : Xuartlite_selftest failed. Code : %d",status);
+	//	return;
+	}
 	XUartLite_ResetFifos(&(io->uartlite));
 	
 	
@@ -53,6 +59,8 @@ void IO_init(IOmanager * io, u16 device_id, IO_cb callback, void* callback_arg)
 	status = pthread_create(&io->input_t, NULL, (void*)IO_inputThread, io);
 
 	io->init = TRUE;
+	xil_printf("\n  IO_init in io.c finished.   \n");
+
 }
 
 void IO_send(IOmanager * io, void * data)
@@ -84,6 +92,7 @@ void IO_inputThread(IOmanager * io)
 		 ib_size = 0;
 	
 	//main pooling thread
+	xil_printf(" IO_inputThread started.");
 	while(1)
 	{
 		received = XUartLite_Recv(&(io->uartlite), io->input_buffer+((ib_start+ib_size)%BUFFER_SIZE), BUFFER_SIZE-((ib_start+ib_size)%BUFFER_SIZE));
