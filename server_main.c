@@ -17,7 +17,7 @@ int main(){
 
 void callback(GameState* state)
 {
-/*	char i;
+	char i;
 	Player * pl_in;
 	Player * pl_out;
 	Ball * ball;
@@ -30,20 +30,21 @@ void callback(GameState* state)
 		pl_out = &(output.players[TEAM_A][i]);
 
 		xil_printf("\n  Joueur %d : x=%d y=%d   \n", i, pl_in->x_pos, pl_in->y_pos);
-		pl_out->x_pos = pl_in->x_pos;
-		pl_out->y_pos = pl_in->y_pos;
+		//pl_out->x_pos = pl_in->x_pos;
+		//pl_out->y_pos = pl_in->y_pos;
 	}
 
-	ball = &(state->ball);
-	xil_printf("\n  Ball : x=%d y=%d direction=%d speed=%d \n", ball->x_pos, ball->y_pos, ball->direction, ball->speed);
-	*/
+	//ball = &(state->ball);
+	//xil_printf("\n  Ball : x=%d y=%d direction=%d speed=%d \n", ball->x_pos, ball->y_pos, ball->direction, ball->speed);
+	
 
 }
 
 void main_prog()
 {
+	//	xil_printf(" Hello weeeeeeeeeeeeeee\n");
 
-	//	xil_printf("\r\n  XUartLite_Send : status is %d   \r\n", status3);
+		//xil_printf("\r\n  XUartLite_Send : status is %d   \r\n", status3);
 
 	char i;
 	for(i=0; i<5; i++)
