@@ -38,9 +38,9 @@ void IOPlayer_receiveControl(IOPlayermanager * player, char* input);
 // Functions
 //
 
-void IOPlayer_init(IOPlayermanager * player, TeamID team, IOmanager_cb callback)
+void IOPlayer_init(IOPlayermanager * player, TeamID team, IOmanager_cb callback, XIntc * interrupt_controller)
 {
-	IO_init(&(player->io), XPAR_UARTLITE_1_DEVICE_ID, (IO_cb)IOPlayer_receive, (void*)player);
+	IO_init(&(player->io), XPAR_UARTLITE_1_DEVICE_ID, interrupt_controller, XPAR_INTC_0_UARTLITE_1_VEC_ID, (IO_cb)IOPlayer_receive, (void*)player);
 
 	player->callback = callback;
 	player->team = team;
