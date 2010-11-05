@@ -24,6 +24,7 @@
 #include <pthread.h>
 #include <stdbool.h>
 #include "xuartlite.h"
+#include "xintc.h"
 
 
 #define PACKET_SIZE 4	// 4 bytes is 32 bits
@@ -39,6 +40,8 @@ typedef struct
 	void* callback_arg;
 
 	char input_buffer[BUFFER_SIZE];
+	char input_buffer_start;
+	char input_buffer_received;
 
 	pthread_t input_t;			// Pooling thread (checking for new stuff on input);
 }
@@ -51,7 +54,7 @@ IOmanager;
  * callback_arg		argument passed as first argument to callback
  *
  */
-void IO_init(IOmanager * io, u16 device_id, IO_cb callback, void* callback_arg);
+void IO_init(IOmanager * io, u16 device_id, XIntc * interrupt_controller, u16 interrupt_id, IO_cb callback, void* callback_arg);
 
 /**
  * Send informations to the server (if we are player) or to the two players (if we are the server).

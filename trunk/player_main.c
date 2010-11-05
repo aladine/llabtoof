@@ -4,13 +4,26 @@
 
 #include <stdio.h>
 
-//#include "xparameters.h"
+#include "xparameters.h"
 #include "structures.h"
 #include "io/io_player.h"
 
+#include "xintc.h"
+#include "xil_exception.h"
+
+/*
+struct device_parameters
+{
+	u16 device_id;
+	XIntc * intterupt_controller;
+	u16 intterupt_id;
+}
+*/
 IOPlayermanager player;
 
 GameState output;
+
+XIntc InterruptController;
 
 int main(){
 
@@ -46,6 +59,9 @@ void main_prog()
 {
 
 	//	xil_printf("\r\n  XUartLite_Send : status is %d   \r\n", status3);
+	
+	XIntc_Initialize(&InterruptController, XPAR_INTC_0_DEVICE_ID);
+	
 
 	char i;
 	for(i=0; i<5; i++)
@@ -59,8 +75,17 @@ void main_prog()
 	output.ball.y_pos = 0;
 	output.ball.direction = 0;
 	output.ball.speed = 0;
+	
+	
 
-	IOPlayer_init(&player, TEAM_A, callback);
+	IOPlayer_init(&player, TEAM_A, callback, &InterruptController);
+	
+	
+	XIntc_Start(&InterruptController, XIN_REAL_MODE);
+	XIntc_Enable(&InterruptController, XPAR_INTC_0_UARTLITE_1_VEC_ID);
+	Xil_ExceptionInit();
+	Xil_ExceptionRegisterHandler(XIL_EXCEPTION_ID_INT, (Xil_ExceptionHandler)XIntc_InterruptHandler, &InterruptController);
+	Xil_ExceptionEnable();
 
 	xil_printf("\n  Coucou   \n");
 

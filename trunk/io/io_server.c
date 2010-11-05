@@ -36,7 +36,7 @@ void IOServer_SendInfo(IOServermanager * server, GameState * state);
 // Functions
 //
 
-void IOServer_init(IOServermanager * server, IOmanager_cb callback)
+void IOServer_init(IOServermanager * server, IOmanager_cb callback, XIntc * interrupt_controller)
 {
 	server->return_v[0].server = server;
 	server->return_v[1].server = server;
@@ -54,8 +54,8 @@ void IOServer_init(IOServermanager * server, IOmanager_cb callback)
 		server->input.players[TEAM_B][i].kick_speed = 0;
 	}
 
-	IO_init(&(server->io[0]), XPAR_UARTLITE_1_DEVICE_ID, (IO_cb)IOServer_receive, (void*)(&(server->return_v[0])));	//init IO for team A
-	IO_init(&(server->io[1]), XPAR_UARTLITE_2_DEVICE_ID, (IO_cb)IOServer_receive, (void*)(&(server->return_v[1])));	//init IO for team B
+	IO_init(&(server->io[0]), XPAR_UARTLITE_1_DEVICE_ID, interrupt_controller, XPAR_INTC_0_UARTLITE_1_VEC_ID, (IO_cb)IOServer_receive, (void*)(&(server->return_v[0])));	//init IO for team A
+	IO_init(&(server->io[1]), XPAR_UARTLITE_2_DEVICE_ID, interrupt_controller, XPAR_INTC_0_UARTLITE_2_VEC_ID, (IO_cb)IOServer_receive, (void*)(&(server->return_v[1])));	//init IO for team B
 	server->callback = callback;
 
 	server->started = 0;

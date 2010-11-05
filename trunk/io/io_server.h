@@ -22,6 +22,7 @@
 
 #include "io_structures.h"
 #include "io.h"
+#include "xintc.h"
 
 typedef struct io_server_manager IOServermanager;
 
@@ -49,7 +50,7 @@ struct io_server_manager
 //void (*IOmanager_cb)(void); //Void function pointer ?
 
 
-void IOServer_init(IOServermanager * server, IOmanager_cb callback);
+void IOServer_init(IOServermanager * server, IOmanager_cb callback, XIntc * interrupt_controller);
 void IOServer_send(IOServermanager * server, GameState * output);
 
 
