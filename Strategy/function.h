@@ -42,11 +42,7 @@ struct Area // structure defining the areas
 	int poX;
 	int poY;
 };
-struct Direction
-{
-	int x;
-	int y;
-};
+
 
 
 
@@ -58,11 +54,9 @@ typedef struct Player_sent Player_sent;
 typedef struct Player_up Player_up;
 typedef struct Ball_Our Ball_Our;
 typedef struct Area Area;
-typedef struct Direction Direction;
 /***********************************************************************************************************************************************/
 //////////////GLOBALS///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /***********************************************************************************************************************************************/
-Direction direction[16];
 IOPlayermanager io_stuff; 
 Area Area_1,Area_2,Area_3,Area_4;
 Area Area_red;
