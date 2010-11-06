@@ -36,7 +36,7 @@ void IOServer_SendInfo(IOServermanager * server, GameState * state);
 // Functions
 //
 
-void IOServer_init(IOServermanager * server, IOmanager_cb callback, XIntc * interrupt_controller)
+void IOServer_init(IOServermanager * server, IOmanager_cb callback)
 {
 	server->return_v[0].server = server;
 	server->return_v[1].server = server;
