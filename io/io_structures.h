@@ -72,7 +72,7 @@ typedef enum
 }
 IOPacketS2PControlType;
 
-typedef struct IOPacketS2P_info_player_s
+typedef struct
 {
 	IOPacketS2PType packet_type : 1;
 	TeamID teamid : 1;
@@ -82,9 +82,10 @@ typedef struct IOPacketS2P_info_player_s
 	unsigned xpos : 10;
 	unsigned ypos : 10;
 	unsigned unused : 5;
-}IOPacketS2P_info_player;
+}
+IOPacketS2P_info_player;
 
-typedef struct IOPacketS2P_info_ball_s
+typedef struct
 {
 	IOPacketS2PType packet_type : 1;
 	unsigned unused0 : 1; //Does not use team_id bit. Does this work ?
@@ -95,16 +96,18 @@ typedef struct IOPacketS2P_info_ball_s
 	unsigned ypos : 10;
 	unsigned speed : 4;
 	unsigned unused : 1;
-}IOPacketS2P_info_ball;
+}
+IOPacketS2P_info_ball;
 
-typedef struct IOPacketS2P_control_s
+typedef struct
 {
 	IOPacketS2PType packet_type : 1;
 	TeamID teamid : 1;
 	IOPacketS2PControlType foulgoal : 1;
 	
 	unsigned unused : 29;
-} IOPacketS2P_control;
+}
+IOPacketS2P_control;
 
 
 #endif //IO_STRUCTURES_H

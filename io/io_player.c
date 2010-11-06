@@ -128,22 +128,17 @@ void IOPlayer_sendUpdate(IOPlayermanager * player, GameState* state)
 
 
 void IOPlayer_receive(IOPlayermanager * player, char* input)
-{
-
-	xil_printf("\n  hi !!!  \n");
-	
+{	
 	//Here convert packet (input) to sructure (player->input)
 	
 	//Determinate packet type
 	char infocontrol = (input[0] & (0x80))?1:0;	// 0x80 = 0b10000000
 	
-	IO_send(&(player->io), input);
+	//IO_send(&(player->io), input);
 	
 	if(infocontrol == INFO)
 	{
 		char playerball = (input[0] & (0x20))?1:0;	// 0x20 = 0b00100000
-		
-		xil_printf("\n  OK !!!  \n");
 
 		if(playerball == PLAYER)
 			IOPlayer_recieveInfoPlayer(player, input);
@@ -151,7 +146,7 @@ void IOPlayer_receive(IOPlayermanager * player, char* input)
 			IOPlayer_recieveInfoBall(player, input);
 		
 		player->received++;
-		if(player->received == 2)
+		if(player->received == 1)	// Amount of packets before calling cb.
 			player->callback(&(player->input));
 	}
 	else
@@ -163,24 +158,16 @@ void IOPlayer_receive(IOPlayermanager * player, char* input)
 }
 
 void IOPlayer_recieveInfoPlayer(IOPlayermanager * player, char* input)
-{
-	IO_send(&(player->io), "IFP\n");
-
+{		
 	//cast "raw" packet to the appropriate structure
 	IOPacketS2P_info_player * packet = (IOPacketS2P_info_player *) input;
-	
-	IO_send(&(player->io), "IFP\n");
-	
+		
 	//GameState * input = &(player->input);
 
 	TeamID team = packet->teamid;
-	
-	IO_send(&(player->io), "IFP\n");
-	
+		
 	Player * f_player = &(player->input.players[team][packet->playerid]);
-	
-	IO_send(&(player->io), "IFP\n");
-
+		
 	f_player->x_pos = packet->xpos;
 	f_player->y_pos = packet->ypos;
 }
