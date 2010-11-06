@@ -202,7 +202,8 @@ int Which_Direction_About_Player_To_Ball(int id)
 int Number_Opponent_Player_Area(int area)  // function to assess how many oponents
 {  // are in a given area
 	int number=0;
-	for (int i=0; i<5; i++) // checking the position of each opponent player
+	int i;
+	for (i=0; i<5; i++) // checking the position of each opponent player
 	{
 		if (Where_Is_The_Opponent_Player(i)==area)
 		{
@@ -268,7 +269,7 @@ int Where_Is_The_player(int id)
 			}
 		}
 	}
-	printf("Dupa");
+	xil_printf("Dupa");
 	return 50;
 }
 
@@ -331,7 +332,7 @@ int Where_Is_The_Opponent_Player(int id)
 			}
 		}
 	}
-	printf("Error");
+	xil_printf("Error");
 	return 50;
 }
 
@@ -378,7 +379,8 @@ void Shoot(int id)
 int Which_Player_In_My_Area(int My_Area) // function returns the number of the player that is in my area 
 {
 	int Which_Player;
-	for(int i=0;i<5;i++)
+	int i;
+	for(i=0;i<5;i++)
 	{
 		if(Where_Is_The_Opponent_Player(i)==My_Area)
 		{
@@ -479,6 +481,26 @@ int Where_Is_The_Ball()
 		}
 	}
 	
+}
+
+void Run_Average(int id)
+
+{
+
+    player_up[id].action=1;
+
+    if(team==0)
+
+        player_up[id].direction=0;
+
+    else
+
+        player_up[id].direction=8;
+
+    player_up[id].speed=15;
+
+    Send_Update_Queue(id);
+
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
