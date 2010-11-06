@@ -22,7 +22,6 @@
 
 #include "io_structures.h"
 #include "io.h"
-#include "xintc.h"
 
 typedef struct
 {
@@ -44,7 +43,7 @@ IOPlayermanager;
  * team			the team that the player will play
  * callback		a function pointer called when data is recieved
  */
-void IOPlayer_init(IOPlayermanager * io, TeamID team, IOmanager_cb callback, XIntc * interrupt_controller);
+void IOPlayer_init(IOPlayermanager * io, TeamID team, IOmanager_cb callback);
 
 
 void IOPlayer_send(IOPlayermanager * io, GameState * output);
