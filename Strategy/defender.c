@@ -8,7 +8,7 @@
 void Defender_Strategy_Defense(int id)
 {
 	int i;
-    if(Distance_Player_Ball(id)<=3) //Defender has the ball
+    if(Distance_Player_Ball(id)<=15) //Defender has the ball
     {
         if(player_sent[id].x>=320) // Defender pass the ball to the strcker when he is near the middle line
         {

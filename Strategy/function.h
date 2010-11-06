@@ -84,7 +84,7 @@ int F0;
 /***********************************************************************************************************************************************/
 ///////DECLATRATIONS////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /***********************************************************************************************************************************************/
-void Initialisation_of_Areas();
+void Initialisation_of_Areas(); // TESTED
 void Update_Strategy();  
 int Choose_Strategy();
 void Goalkeeper_Strategy_Defense();
@@ -93,29 +93,29 @@ void Striker_Strategy_Attack(int id);
 void Pass_Stricker_free_A(int id);
 void Pass_Stricker_free_B(int id);
 int Which_Direction_About_Player_To_Ball(int id);
-int Number_Opponent_Player_Area(int area);
-int Where_Is_The_Opponent_Player(int id);
+int Number_Opponent_Player_Area(int area); //TESTED
+int Where_Is_The_Opponent_Player(int id);//TESTED
 void Send_Update_Queue(int id);
-int Distance_Player_Ball(int id);
+int Distance_Player_Ball(int id); //TESTED
 void Shoot(int id); 
-int Which_Player_In_My_Area(int My_Area); 
-int How_Many_Opponents_In_The_Other_Area(int My_Area);
+int Which_Player_In_My_Area(int My_Area); //TESTED
+int How_Many_Opponents_In_The_Other_Area(int My_Area);//TESTED
 void Pass_To_The_Other_Striker(int id); 
-int Where_Is_The_player(int id);
-int Where_Is_The_Ball();
+int Where_Is_The_player(int id); //TESTED
+int Where_Is_The_Ball(); //TESTED
 void Run_Average(int id);
 //////////////////////////////////////////////////
 //////PART B/////////////////////////////////////
 /////////////////////////////////////////////////
-void Initialisation_Beginning();
-void Initialisation_Goal();
-void Initialisation_Foul(int team_ref);
-void Construct_Initial_Packet_Player0(int Team);
-void Construct_Initial_Packet_Player1(int Team);
-void Construct_Initial_Packet_Player2(int Team);
-void Construct_Initial_Packet_Player3(int Team);
-void Construct_Initial_Packet_Player4(int Team);
-void Send_Queue();  
+void Initialisation_Beginning(); //TESTED
+void Initialisation_Goal(); //TESTED 
+void Initialisation_Foul(int team_ref); //TESTED
+void Construct_Initial_Packet_Player0(int Team); //TESTED
+void Construct_Initial_Packet_Player1(int Team); // TESTED
+void Construct_Initial_Packet_Player2(int Team); // TESTED
+void Construct_Initial_Packet_Player3(int Team); // TESTED
+void Construct_Initial_Packet_Player4(int Team); // TESTED
+void Send_Queue();   
 //////////////////////////////////////////////////
 //////PART C/////////////////////////////////////
 /////////////////////////////////////////////////

@@ -101,9 +101,9 @@ int Which_Direction_About_gp_To_Red_Area()
 int Distance_Player_Ball(int id)
 {
 	int distance;
-	distance= (ball.x-player[id].x)*(ball.x-player[id].x)+(ball.y-player[id].y)*(ball.y-player[id].y);
+	distance= (ball.x-player_sent[id].x)*(ball.x-player_sent[id].x)+(ball.y-player_sent[id].y)*(ball.y-player_sent[id].y);
 	distance=sqrt(distance);
-    return distance-12;
+    return distance;//-12;
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -201,11 +201,13 @@ int Which_Direction_About_Player_To_Ball(int id)
 //----------------number of opponent player in the area---------------------------------------
 int Number_Opponent_Player_Area(int area)  // function to assess how many oponents
 {  // are in a given area
-	int number=0, i;
-	for ( i=0; i<5; i++) // checking the position of each opponent player
+	int number=0;
+	for (int i=0; i<5; i++) // checking the position of each opponent player
 	{
 		if (Where_Is_The_Opponent_Player(i)==area)
-			number++; // increase the number if there is a player in this area
+		{
+			number++;
+		}// increase the number if there is a player in this area
 	}
 	return number;
 }
@@ -214,36 +216,125 @@ int Number_Opponent_Player_Area(int area)  // function to assess how many oponen
 //----------------the area where is the Player------------------------------------------------
 int Where_Is_The_player(int id)
 { // the function returns the number of the area in which the  player is
-	if (Area_1.pox<player_sent[id].x<Area_1.poX) //checking if he is in area 1
-		if (Area_1.poy<player_sent[id].y<Area_1.poY)
-			return 1;
-	if (Area_2.pox<player_sent[id].x<Area_2.poX)  // checking if he is in area 2
-		if (Area_2.poy<player_sent[id].y<Area_2.poY)
-			return 2;
-	if (Area_3.pox<player_sent[id].x<Area_3.poX) // checking if he is in area 3
-		if (Area_3.poy<player_sent[id].y<Area_3.poY)
-			return 3;
-	if (Area_4.pox<player_sent[id].x<Area_4.poX) // checking if he is in area 4
-		if (Area_4.poy<player_sent[id].y<Area_4.poY)
-			return 4;
+	if (Area_red.pox<=player_sent[id].x)
+	{
+		if(player_sent[id].x<=Area_red.poX)//checking if he is in area 1
+		{
+			if (Area_red.poy<=player_sent[id].y&&player_sent[id].y<=Area_red.poY)
+			{
+				
+				return 0;
+			}
+		}
+	}
+	if (Area_1.pox<=player_sent[id].x)
+	{
+		
+		if(player_sent[id].x<=Area_1.poX)//checking if he is in area 1
+		{
+			if (Area_1.poy<=player_sent[id].y&&player_sent[id].y<=Area_1.poY)
+			{
+				return 1;
+			}
+		}
+	}
+	if (Area_2.pox<=player_sent[id].x)
+	{
+		if(player_sent[id].x<Area_2.poX)//checking if he is in area 2
+		{
+			if (Area_2.poy<=player_sent[id].y&&player_sent[id].y<=Area_2.poY)
+			{
+				return 2;
+			}
+		}
+	}
+	if (Area_3.pox<=player_sent[id].x)
+	{
+		if(player_sent[id].x<=Area_3.poX)//checking if he is in area 1
+		{
+			if (Area_3.poy<=player_sent[id].y&&player_sent[id].y<=Area_3.poY)
+			{
+				return 3;
+			}
+		}
+	}
+	if (Area_4.pox<=player_sent[id].x)
+	{
+		if(player_sent[id].x<=Area_4.poX)//checking if he is in area 1
+		{
+			if (Area_4.poy<=player_sent[id].y&&player_sent[id].y<=Area_4.poY)
+			{
+				return 4;
+			}
+		}
+	}
+	printf("Dupa");
+	return 50;
 }
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-int Where_Is_The_Opponent_Player(id)
+int Where_Is_The_Opponent_Player(int id)
 { // the function returns the number of the area in which the  player is
-	if (Area_1.pox<oplayer[id].x<Area_1.poX) //checking if he is in area 1
-		if (Area_1.poy<oplayer[id].y<Area_1.poY)
-			return 1;
-	if (Area_2.pox<oplayer[id].x<Area_2.poX)  // checking if he is in area 2
-		if (Area_2.poy<oplayer[id].y<Area_2.poY)
-			return 2;
-	if (Area_3.pox<oplayer[id].x<Area_3.poX) // checking if he is in area 3
-		if (Area_3.poy<oplayer[id].y<Area_3.poY)
-			return 3;
-	if (Area_4.pox<oplayer[id].x<Area_4.poX) // checking if he is in area 4
-		if (Area_4.poy<oplayer[id].y<Area_4.poY)
-			return 4;
+	if (Area_1.pox<=oplayer[id].x)
+	{
+		
+		if(oplayer[id].x<=Area_1.poX)//checking if he is in area 1
+		{
+			
+			if (Area_1.poy<=oplayer[id].y)
+			{
+				if(oplayer[id].y<=Area_1.poY)
+				{
+					return 1;
+				}
+			}
+		}
+	}
+	
+	if (Area_2.pox<=oplayer[id].x)
+	{
+		if(oplayer[id].x<=Area_2.poX)//checking if he is in area 2
+		{
+			if (Area_2.poy<=oplayer[id].y)
+			{
+				if(oplayer[id].y<=Area_2.poY)
+				{
+					return 2;
+				}
+			}
+		}
+	}
+	if (Area_3.pox<=oplayer[id].x)
+	{
+		if(oplayer[id].x<=Area_3.poX)//checking if he is in area 1
+		{
+			if (Area_3.poy<=oplayer[id].y)
+			{
+				if(oplayer[id].y<=Area_3.poY)
+				{
+					return 3;
+				}
+			}
+		}
+	}
+	if (Area_4.pox<=oplayer[id].x)
+	{
+		if(oplayer[id].x<=Area_4.poX)//checking if he is in area 1
+		{
+			if (Area_4.poy<=oplayer[id].y)
+			{
+				if(oplayer[id].y<=Area_4.poY)
+				{
+					return 4;
+				}
+			}
+		}
+	}
+	printf("Error");
+	return 50;
 }
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 void Send_Update_Queue(int id) 
@@ -286,11 +377,13 @@ void Shoot(int id)
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 int Which_Player_In_My_Area(int My_Area) // function returns the number of the player that is in my area 
 {
-	int Which_Player,i;
-	for(i=0;i<5;i++)
+	int Which_Player;
+	for(int i=0;i<5;i++)
 	{
 		if(Where_Is_The_Opponent_Player(i)==My_Area)
+		{
 			Which_Player=i;
+		}
 	}
 	return Which_Player;
 }
@@ -330,28 +423,62 @@ void Pass_To_The_Other_Striker(int id)
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 int Where_Is_The_Ball()
 {
-	if (Area_1.pox<ball.x<Area_1.poX)
-		if (Area_1.poy<ball.y<Area_1.poY)
-			return 1;
-	if (Area_2.pox<ball.x<Area_2.poX)
-		if (Area_2.poy<ball.y<Area_2.poY)
-			return 2;
-	if (Area_3.pox<ball.x<Area_3.poX)
-		if (Area_3.poy<ball.y<Area_3.poY)
-			return 3;
-	if (Area_4.pox<ball.x<Area_4.poX)
-		if (Area_4.poy<ball.y<Area_4.poY)
-			return 4;
-}
-void Run_Average(int id)
-{
-    player_up[id].action=1;
-    if(team==0)
-        player_up[id].direction=0;
-    else
-        player_up[id].direction=8;
-    player_up[id].speed=15;
-    Send_Update_Queue(id);
+	if (Area_1.pox<=ball.x)
+	{
+		
+		if(ball.x<=Area_1.poX)//checking if he is in area 1
+		{
+			
+			if (Area_1.poy<=ball.y)
+			{
+				if(ball.y<=Area_1.poY)
+				{
+					return 1;
+				}
+			}
+		}
+	}
+	
+	if (Area_2.pox<=ball.x)
+	{
+		if(ball.x<=Area_2.poX)//checking if he is in area 2
+		{
+			if (Area_2.poy<=ball.y)
+			{
+				if(ball.y<=Area_2.poY)
+				{
+					return 2;
+				}
+			}
+		}
+	}
+	if (Area_3.pox<=ball.x)
+	{
+		if(ball.x<=Area_3.poX)//checking if he is in area 1
+		{
+			if (Area_3.poy<=ball.y)
+			{
+				if(ball.y<=Area_3.poY)
+				{
+					return 3;
+				}
+			}
+		}
+	}
+	if (Area_4.pox<=ball.x)
+	{
+		if(ball.x<=Area_4.poX)//checking if he is in area 1
+		{
+			if (Area_4.poy<=ball.y)
+			{
+				if(ball.y<=Area_4.poY)
+				{
+					return 4;
+				}
+			}
+		}
+	}
+	
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -366,7 +493,7 @@ void Run_Average(int id)
 //---------------------------------------------
 void Construct_Initial_Packet_Player0(int team)
 {
-	if(team==1)
+	if(team==0)
 	{
 		player[0].x=20;
 		player[0].y=200;
@@ -388,7 +515,7 @@ void Construct_Initial_Packet_Player0(int team)
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 void Construct_Initial_Packet_Player1(int team)
 {
-	if(team=1)
+	if(team==0)
 	{
 		player[1].x=170;
 		player[1].y=100;
@@ -410,7 +537,7 @@ void Construct_Initial_Packet_Player1(int team)
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 void Construct_Initial_Packet_Player2(int team)
 {
-	if(team=1)
+	if(team==0)
 	{
 		player[2].x=170;
 		player[2].y=300;
@@ -432,7 +559,7 @@ void Construct_Initial_Packet_Player2(int team)
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 void Construct_Initial_Packet_Player3(int team)
 {
-	if(team=1)
+	if(team==0)
 	{
 		player[3].x=270;
 		player[3].y=200;
@@ -454,7 +581,7 @@ void Construct_Initial_Packet_Player3(int team)
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 void Construct_Initial_Packet_Player4(int team)
 {
-	if(team=1)
+	if(team==0)
 	{
 		player[4].x=370;
 		player[4].y=200;
@@ -478,13 +605,13 @@ void Construct_Initial_Packet_Player4(int team)
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 void Send_Queue()
 {
-	 int i;
-	 for(i=0;i<5;i++)
-	 {
-	 New_State.players[team][i].x_pos=player[i].x;
-	 New_State.players[team][i].y_pos=player[i].y;
-	 }
-	 IOPlayer_send(&io_stuff, &New_State);
+	int i;
+	for(i=0;i<5;i++)
+	{
+		New_State.players[team][i].x_pos=player[i].x;
+		New_State.players[team][i].y_pos=player[i].y;
+	}
+	IOPlayer_send(&io_stuff, &New_State);
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -622,7 +749,7 @@ int Which_Direction_About_Ball_To_Goal(int id)
 		{
 			a=ball.x;
 			b=230-ball.y;
-		}		
+		}               
 	}
 	
 	while(i<16)
@@ -654,21 +781,21 @@ void callback(GameState *State_Received)
 			break;
 		case EVENT_NONE:
 			Update_Strategy();
-			break;		
+			break;          
 	}
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 void Copy_State_Received(GameState *State_Received)
 {
-	 int i;
-	 ball.x = State_Received->ball.x_pos;
-	 ball.y= State_Received->ball.y_pos;
-	 ball.speed= State_Received->ball.speed;
-	 ball.direction= State_Received->ball.direction;
-	 
-	 if(team==TEAM_A)
-	 {
+	int i;
+	ball.x = State_Received->ball.x_pos;
+	ball.y= State_Received->ball.y_pos;
+	ball.speed= State_Received->ball.speed;
+	ball.direction= State_Received->ball.direction;
+	
+	if(team==TEAM_A)
+	{
 		for(i=0 ; i<5 ; i++)
 		{
 			player_sent[i].x = State_Received->players[TEAM_A][i].x_pos;
@@ -683,25 +810,21 @@ void Copy_State_Received(GameState *State_Received)
 			oplayer[i].team=1;
 			oplayer[i].id=i;
 		}
-	 }
-	 else
-	 {
-	 for(i=0;i<5;i++)
-	 {
-	 player_sent[i].x= State_Received->players[TEAM_B][i].x_pos;
-	 player_sent[i].y= State_Received->players[TEAM_B][i].y_pos;
-	 player_sent[i].team=1;
-	 player_sent[i].id=i;
-	 }
-	 for(i=0;i<5;i++)
-	 {
-	 oplayer[i].y= State_Received->players[TEAM_A][i].y_pos;
-	 oplayer[i].team=0;
-	 oplayer[i].id=i;
-	 }
-	 }
+	}
+	else
+	{
+		for(i=0;i<5;i++)
+		{
+			player_sent[i].x= State_Received->players[TEAM_B][i].x_pos;
+			player_sent[i].y= State_Received->players[TEAM_B][i].y_pos;
+			player_sent[i].team=1;
+			player_sent[i].id=i;
+		}
+		for(i=0;i<5;i++)
+		{
+			oplayer[i].y= State_Received->players[TEAM_A][i].y_pos;
+			oplayer[i].team=0;
+			oplayer[i].id=i;
+		}
+	}
 }
-
-
-
-
