@@ -20,7 +20,7 @@ void Update_Strategy()
 {
     if(Choose_Strategy()==0)
     {
-        BC0=1;
+      BC0=1;
 		BC1=1;
 		BC2=1;
 		BC3=1;
