@@ -122,7 +122,7 @@ int Which_Direction_About_Ball_To_Goal(int id);
 //////////////////////////////////////////////////
 //////NEW WITH ADRIEN/////////////////////////////
 /////////////////////////////////////////////////
-//void callback(GameState *State_Received);
+void callback(GameState *State_Received);
 void send_to_io();
 void Copy_State_Received();
 

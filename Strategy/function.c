@@ -83,11 +83,51 @@ int Which_Direction_About_gp_To_Red_Area()
 
 int Coor_To_Direction(int a, int b)
 {
-	float alpha= atan2(a, b);
-	if(alpha < 0) alpha += 2*PI;
-	int temp = round(8*alpha/PI);
+
+	float alpha;
+	int temp;
+	
+	if(b==0)
+	{
+		if(a>0)
+		{
+			return 0;
+		}
+		else
+		{
+			return 8;
+		}
+
+	}
+	else
+	{
+		if(a==0)
+		{
+			if(b>0)
+			{
+				return 4;
+			}
+			else
+			{
+				return 12;
+			}
+		}
+		else
+		{
+			alpha = atan2(b,a);
+		}
+	}
+	int temp2;
+	temp2=alpha*180/3.14;
+
+	if(alpha < 0)
+	{
+		alpha += 2*3.14;
+	}
+	temp= round(8*alpha/3.14);
 	return temp%16;
 }
+
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

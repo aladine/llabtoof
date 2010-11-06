@@ -73,7 +73,6 @@ void* thread_player_2 ()
 void* thread_player_3 ()
 {
 	xil_printf("Entering thread_player_3\n");
-
 	while(1)
 	{
 		if(BC3==1)
@@ -117,27 +116,13 @@ void timer_a_int_handler(void * baseaddr_p)
 	xil_printf("After...%X \r\n", csr);
 }
  
-void _callback(GameState* state)
+void _callback(GameState * state)
 {
-	char i;
-	//copy_state_received
-	Player * pl_in;
-	//Player * pl_out;
-	Ball * ball;
-	xil_printf("\n Inside callback \n");
+	unsigned int i = 0;
+	
 
-	for(i=0; i<5; i++)
-	{
-		pl_in = &(state->players[TEAM_A][i]);
-		//pl_out = &(output.players[TEAM_A][i]);
-
-		xil_printf("\n  Joueur %d : x=%d y=%d   \n", i, pl_in->x_pos, pl_in->y_pos);
-		//pl_out->x_pos = pl_in->x_pos;
-		//pl_out->y_pos = pl_in->y_pos;
-	}
-
-	ball = &(state->ball);
-	xil_printf("\n  Ball : x=%d y=%d direction=%d speed=%d \n", ball->x_pos, ball->y_pos, ball->direction, ball->speed);
+		xil_printf("\n\r  Player %d : xpos=%d ypos=%d   \n", i, state->players[TEAM_A][i].x_pos, state->players[TEAM_A][i].y_pos);
+		
 }
 /***********************************************************************************************************************************************/
 //////////////MAIN_PROG//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -157,13 +142,13 @@ int main_prog(void) {   // This thread is statically created (as configured in t
 	int start=0;
 	int status;
 	u32 DataRead;
-	IOPlayer_init(&io_player, TEAM_A,(IOmanager_cb)_callback);
-	xil_printf("IOplayer_init done");
-	print(" START the PROGRAM\r\n");
+	IOPlayer_init(&io_player, TEAM_A,(IOmanager_cb) callback);
+	//xil_printf("IOplayer_init done");
+	//print(" START the PROGRAM\r\n");
 
 	while(start==0)
 	{
-		print(" Press button to Generate Interrupt\r\n");
+		//print(" Press button to Generate Interrupt\r\n");
 		 
 		status = GpioIntrExample( &Gpio,
 		GPIO_DEVICE_ID,
@@ -172,12 +157,12 @@ int main_prog(void) {   // This thread is statically created (as configured in t
 		 
 		if (status == 0 )
 		{
-			if(DataRead == 0)
-				print("No button pressed. \r\n");
-			 
+			if(DataRead == 0){
+				//print("No button pressed. \r\n");
+			               }
 			else
 			{
-				xil_printf("Push button Interrupt Test is %X \r\n",DataRead);
+				//xil_printf("Push button Interrupt Test is %X \r\n",DataRead);
 				start=1;
 				Initialisation_Beginning();
 			}
