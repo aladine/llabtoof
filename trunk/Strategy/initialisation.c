@@ -8,7 +8,6 @@
 //-------------------------------------------------------------------
 void Initialisation_Beginning()
 {
-	//Team=Read_Value_Of_Dip_Switch(); //---0=teamA ---1=teamB
 	Construct_Initial_Packet_Player0(team);
 	Construct_Initial_Packet_Player1(team);
 	Construct_Initial_Packet_Player2(team);

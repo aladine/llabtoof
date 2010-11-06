@@ -32,7 +32,7 @@ void Goalkeeper_Strategy_Defense()
 		goto END_OF_THIS_FUNCTION;
 	}
 	// put the goalkeeper code already writen here
-    if(Distance_Player_Ball(0)<=3) // the goalkeeper has the ball
+    if(Distance_Player_Ball(0)<=15) // the goalkeeper has the ball
     {
 		if(team==0)
 			Pass_Stricker_free_A(0);

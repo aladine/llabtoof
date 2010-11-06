@@ -6,7 +6,7 @@
 
 void Striker_Strategy_Attack(int id)
 {
-	if(Distance_Player_Ball(id)<=3) // the striker has the ball
+	if(Distance_Player_Ball(id)<=15) // the striker has the ball
 	{
 		switch (Number_Opponent_Player_Area(id))
 		{
