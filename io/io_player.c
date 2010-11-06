@@ -44,6 +44,7 @@ void IOPlayer_init(IOPlayermanager * player, TeamID team, IOmanager_cb callback)
 	player->team = team;
 	
 	player->started = 0;
+	player->received = 0;
 	
 //	IO_send(&(player->io), "PLIN");
 //	IO_send(&(player->io), "IT\r\n");
@@ -129,34 +130,36 @@ void IOPlayer_sendUpdate(IOPlayermanager * player, GameState* state)
 void IOPlayer_receive(IOPlayermanager * player, char* input)
 {
 
-	IO_send(&(player->io), "PLRE");
-	IO_send(&(player->io), "CV!\n");
-		
+	xil_printf("\n  hi !!!  \n");
+	
 	//Here convert packet (input) to sructure (player->input)
 	
 	//Determinate packet type
 	char infocontrol = (input[0] & (0x80))?1:0;	// 0x80 = 0b10000000
-	/*
-	char ic_debug[4] = "PKIX";
-	if(infocontrol) ic_debug[3] = '1';
-	else ic_debug[3] = '0';*/
 	
 	IO_send(&(player->io), input);
 	
 	if(infocontrol == INFO)
 	{
 		char playerball = (input[0] & (0x20))?1:0;	// 0x20 = 0b00100000
+		
+		xil_printf("\n  OK !!!  \n");
 
 		if(playerball == PLAYER)
 			IOPlayer_recieveInfoPlayer(player, input);
 		else
 			IOPlayer_recieveInfoBall(player, input);
+		
+		player->received++;
+		if(player->received == 2)
+			player->callback(&(player->input));
 	}
 	else
+	{
 		IOPlayer_recieveControl(player, input);
-
-	IO_send(&(player->io), "\0\0\0\0");
-	player->callback(&(player->input));
+		player->callback(&(player->input));
+	}
+	
 }
 
 void IOPlayer_recieveInfoPlayer(IOPlayermanager * player, char* input)
@@ -180,8 +183,6 @@ void IOPlayer_recieveInfoPlayer(IOPlayermanager * player, char* input)
 
 	f_player->x_pos = packet->xpos;
 	f_player->y_pos = packet->ypos;
-	
-	
 }
 
 void IOPlayer_recieveInfoBall(IOPlayermanager * player, char* input)
