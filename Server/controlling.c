@@ -6,7 +6,6 @@
 
 #include "xgpio.h"
 #include "xtmrctr.h"
-#include "pthread.h"
 #include "xil_exception.h"
 #include <sys/intr.h>
 #include "io/io_server.h"
@@ -24,8 +23,10 @@ XMbox_Config *mbox_ConfigPtr;
 XStatus status;
 XGpio myGpio;
 XTmrCtr myTimer;
-IOServermanager  server;
+IOServermanager  server; 
 
+pthread_mutex_t temp_gs_mutex; 
+volatile GameState temp_gs;
 volatile GameState local_gs;
 int red_zone_left[2];
 int red_zone_right[2];
@@ -390,8 +391,23 @@ void* controller_update()
 
 void controlling_update()
 {
+	unsigned char i, j;
 	u32 ret;
 	unsigned char mirror_dir;
+	
+	if(!pthread_mutex_trylock(&temp_gs_mutex))
+	{
+		//copy temp_gs to appropriate struture
+		for (i = 0; i < 2; i++)
+			for (j = 0; j < 5; j++)
+			{
+				local_gs.players[i][j].speed = temp_gs.players[i][j].speed;
+				local_gs.players[i][j].direction = temp_gs.players[i][j].direction;
+				local_gs.players[i][j].kick_speed = temp_gs.players[i][j].kick_speed;
+				local_gs.players[i][j].kick_direction = temp_gs.players[i][j].kick_direction;
+			}
+	}
+	
  /*while (1)
  {
  
@@ -431,7 +447,6 @@ void pb_int_handler(void *baseaddr_p)
 	Xuint32 dsr;
 	XGpio_InterruptDisable(&myGpio, XPAR_BUTTONS_3BIT_IP2INTC_IRPT_MASK);
 
-	//dsr = XGpio_ReadReg(XPAR_BUTTONS_3BIT_BASEADDR, 2);
 	dsr= XGpio_DiscreteRead(&myGpio, XPAR_BUTTONS_3BIT_IP2INTC_IRPT_MASK);
 	pb_counter++;
 	xil_printf("dsr is %X  . Press %d times \r\n",dsr,pb_counter);	
@@ -457,7 +472,6 @@ void pb_int_handler(void *baseaddr_p)
 	}
 	//Clear the interrupt both in the Gpio instance as well as the interrupt controller
    testbench_check = 1;
-	//XIntc_Acknowledge(&myIntc,XPAR_BUTTONS_3BIT_INTERRUPT_PRESENT);
 
 	XGpio_InterruptClear(&myGpio, XPAR_BUTTONS_3BIT_IP2INTC_IRPT_MASK);
 	XGpio_InterruptEnable(&myGpio, XPAR_BUTTONS_3BIT_IP2INTC_IRPT_MASK);
@@ -465,20 +479,19 @@ void pb_int_handler(void *baseaddr_p)
 }
 int Gpio_Init()
 {
-       //xil_printf("Setting up interrupt controller...\r\n");
-       //XIntc_Initialize(&myIntc, INTC_DEVICE_ID);
        //Initialize and configure the push buttons
        XGpio_Initialize(&myGpio, XPAR_BUTTONS_3BIT_DEVICE_ID);
        XGpio_SetDataDirection(&myGpio, 1, 0x3);
        XGpio_InterruptEnable(&myGpio, XPAR_BUTTONS_3BIT_IP2INTC_IRPT_MASK);
        XGpio_InterruptGlobalEnable(&myGpio);
        //*******************************************************************************************
-       //XIntc_Connect(&myIntc, XPAR_INTC_1_GPIO_0_VEC_ID,  (XInterruptHandler)pb_int_handler, &myGpio);
-
+      
          register_int_handler(XPAR_INTC_1_GPIO_0_VEC_ID,  (XInterruptHandler)pb_int_handler, &myGpio);
          enable_interrupt (XPAR_INTC_1_GPIO_0_VEC_ID);
 
-        // xil_printf("Entering push button loop...\r\n");
+      // xil_printf("Entering push button loop...\r\n");
+		  
+
 }
 
 int MailBox_Init()
@@ -507,8 +520,10 @@ int MailBox_Init()
 
 void io_callback(GameState * state)
 {
-	xil_printf("Local gs finished");
+	//xil_printf("Local gs finished");
+	pthread_mutex_lock(&temp_gs_mutex);
 	memcpy(&local_gs, state, sizeof(GameState));
+	pthread_mutex_unlock(&temp_gs_mutex);
 	xil_printf("Local gs finished");
 }
 
@@ -524,14 +539,16 @@ int main_prog(void)
 	//** Function execute when interrupt of Push_Button Comes 
 	int ret;
 	//** initial all the hardware and software components
-	MailBox_Init();
+	//MailBox_Init();
 
 	Gpio_Init();
 	Timer_Init(&myTimer);
-//	Timer_Start_Count(&myTimer);
+	Timer_Start_Count(&myTimer);
+
+	ret = pthread_mutex_init(&temp_gs_mutex, NULL);
 
 	//** Two Threads: 1 for IO 2 for timer checking
-	//** void IOServer_init(IOServermanager * server, IOmanager_cb callback);
+	
 	IOServer_init(&server, io_callback);
 	//**Controlling_Thread_init;
 //	ret = pthread_create (&tid1, NULL, (void*)controller_update, NULL);
