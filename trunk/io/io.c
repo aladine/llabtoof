@@ -19,7 +19,6 @@
 #include "xparameters.h"
 #include "xstatus.h"
 
-
 #include "io.h"
 #include <sys/intr.h>
 
@@ -29,6 +28,7 @@
 
 void IO_inputThread(IOmanager * io);
 void IO_receivedHandler(IOmanager * io, unsigned received);
+void IO_sentHandler(IOmanager * io, unsigned sent);
 
 //
 // Functions
@@ -53,34 +53,46 @@ void IO_init(IOmanager * io, u16 device_id, u16 interrupt_id, IO_cb callback, vo
 	if(status != XST_SUCCESS)
 	{
 		xil_printf(" Error : Xuartlite_selftest failed. Code : %d\n", status);
-		return;
+		//return;
 	}
 	
 	XUartLite_ResetFifos(&(io->uartlite));
 	
-	status = register_int_handler(XPAR_XPS_INTC_0_RS232_DCE_INTERRUPT_INTR, (void*)XUartLite_InterruptHandler, &(io->uartlite));
+	status = register_int_handler(interrupt_id, (void*)XUartLite_InterruptHandler, &(io->uartlite));
 	if (status != XST_SUCCESS)
 	{
 		xil_printf(" Error : register_int_handler failed. Code : %d\n", status);
 		return;
 	}
 	
+	//xil_printf("hi @ \n");
+	
 	enable_interrupt(interrupt_id);
 	
 	XUartLite_EnableInterrupt(&(io->uartlite));
 	
+	XUartLite_SetSendHandler(&(io->uartlite), (XUartLite_Handler)IO_sentHandler, io);
+	
 	// Launch input thread (that will pool for new data)
 	status = pthread_create(&io->input_t, NULL, (void*)IO_inputThread, io);
+	if(status)
+	{
+		xil_printf(" Error : pthread_create failed. Code : %d\n", status);
+		return;
+	}
 	
 	io->init = TRUE;
-    //  xil_printf("\n  IO_init in io.c finished.   \n");
+	xil_printf("\n  IO_init in io.c finished.   \n");
 }
 
 void IO_send(IOmanager * io, void * data)
 {
 	if(!io || !(io->init) || !data) return;
 
+	io->sent = false;
 	XUartLite_Send(&(io->uartlite), data, 4);
+	
+	while(!io->sent) asm("nop");
 }
 
 
@@ -94,40 +106,37 @@ void IO_send(IOmanager * io, void * data)
 void IO_inputThread(IOmanager * io)
 {
 	if(!io) return;
-
 	char i;
-		  
-	char * ib_start = &(io->input_buffer_start);
-	char * ib_size = &(io->input_buffer_received);
-
+		
 	for(i=0; i<BUFFER_SIZE; i++) io->input_buffer[i] = 0;   //empty input buffer
-	
-	*ib_start = 0;
-	*ib_size = 0;
 	
 	XUartLite_SetRecvHandler(&(io->uartlite), (XUartLite_Handler)IO_receivedHandler, io);
 	IO_receivedHandler(io, 0);
-	
+
 	//main pooling thread
-    //  xil_printf(" IO_inputThread started.");
+   xil_printf(" IO_inputThread started.");
 	while(1)
 	{
-		while(*ib_size >= PACKET_SIZE)
+		if(io->input_buffer_received >= PACKET_SIZE)
 		{
-			io->callback(io->callback_arg, io->input_buffer+(*ib_start % BUFFER_SIZE));
-			ib_start += PACKET_SIZE;
-			ib_size -= PACKET_SIZE;	 //possibility of multi-"threading" problems here
+			io->callback(io->callback_arg, io->input_buffer+(io->input_buffer_start % BUFFER_SIZE));
+			io->input_buffer_start += PACKET_SIZE;
+			io->input_buffer_received -= PACKET_SIZE;	 //possibility of multi-"threading" problems here
 		}
-		
 		//for(i=0; i<1000; i++) { asm("nop"); asm("nop"); }
 	}
 }
 
 void IO_receivedHandler(IOmanager * io, unsigned received)
-{		  
-	io->input_buffer_received += received;
-	
+{
+	io->input_buffer_received += received;	
 	XUartLite_Recv(&(io->uartlite), 
 		       io->input_buffer+((io->input_buffer_start+io->input_buffer_received)%BUFFER_SIZE), 
 		       PACKET_SIZE);
+}
+
+void IO_sentHandler(IOmanager * io, unsigned sent)
+{
+	xil_printf(" Packet sent.");
+	io->sent = true;
 }

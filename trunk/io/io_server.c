@@ -1,7 +1,7 @@
 /* io_server.c -- io convertion functions for server
  *
  * Copyright 2010 Per Kristian Kjoell <a0075664@nus.edu.sg>
- * Copyright 2010 Adrien Béraud <adrienberaud@gmail.com>
+ * Copyright 2010 Adrien Braud <adrienberaud@gmail.com>
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -54,8 +54,8 @@ void IOServer_init(IOServermanager * server, IOmanager_cb callback)
 		server->input.players[TEAM_B][i].kick_speed = 0;
 	}
 
-	IO_init(&(server->io[0]), XPAR_UARTLITE_1_DEVICE_ID, XPAR_INTC_0_UARTLITE_1_VEC_ID, (IO_cb)IOServer_receive, (void*)(&(server->return_v[0])));	//init IO for team A
-	IO_init(&(server->io[1]), XPAR_UARTLITE_2_DEVICE_ID, XPAR_INTC_0_UARTLITE_2_VEC_ID, (IO_cb)IOServer_receive, (void*)(&(server->return_v[1])));	//init IO for team B
+	IO_init(&(server->io[0]), XPAR_UARTLITE_1_DEVICE_ID, XPAR_INTC_1_UARTLITE_1_VEC_ID, (IO_cb)IOServer_receive, (void*)(&(server->return_v[0])));	//init IO for team A
+	IO_init(&(server->io[1]), XPAR_UARTLITE_2_DEVICE_ID, XPAR_INTC_1_UARTLITE_2_VEC_ID, (IO_cb)IOServer_receive, (void*)(&(server->return_v[1])));	//init IO for team B
 	server->callback = callback;
 
 	server->started = 0;
@@ -68,15 +68,12 @@ void IOServer_init(IOServermanager * server, IOmanager_cb callback)
 
 void IOServer_receive(struct io_server_callback_return * server_t, char * input)
 {
-
-
-
-
-
 	IOServermanager * server = server_t->server;
 	TeamID team = server_t->team;
 
 	//Here convert packet (input) to structure (server->input)
+	
+	xil_printf("hI !! SDRTGSDR  \n");
 	
 	if(input[0] & 0x80) //bit 31 = 1 => initial packet, 0x80 = 0b10000000
 	{
@@ -103,7 +100,7 @@ void IOServer_receive(struct io_server_callback_return * server_t, char * input)
 		if(input[0] & 0x40) //bit 30 = 1 => kick
 		{
 			player->kick_speed = packet->speed;
-			player->kick_direction = packet->direction;
+			player->kick_direction = packet->direction; 
 		}
 		else //bit 30 = 0 => movement
 		{
