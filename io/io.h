@@ -39,7 +39,8 @@ typedef struct
 
 	char input_buffer[BUFFER_SIZE];
 	char input_buffer_start;
-	char input_buffer_received;
+	volatile char input_buffer_received;
+	volatile bool sent;
 
 	pthread_t input_t;			// Pooling thread (checking for new stuff on input);
 }

@@ -39,7 +39,7 @@ void IOPlayer_recieveControl(IOPlayermanager * player, char* input);
 void IOPlayer_init(IOPlayermanager * player, TeamID team, IOmanager_cb callback)
 {
 	IO_init(&(player->io), XPAR_UARTLITE_1_DEVICE_ID, XPAR_INTC_0_UARTLITE_1_VEC_ID, (IO_cb)IOPlayer_receive, (void*)player);
-
+	
 	player->callback = callback;
 	player->team = team;
 	
@@ -59,6 +59,7 @@ void IOPlayer_send(IOPlayermanager * player, GameState * output)
 {
 	if(!player->started)
 	{
+		xil_printf("Sending initial packets \n");
 		//We are a player and we have to send initial position packets
 		IOPlayer_sendInitPos(player, output);
 	}
@@ -73,18 +74,20 @@ void IOPlayer_send(IOPlayermanager * player, GameState * output)
 void IOPlayer_sendInitPos(IOPlayermanager * player, GameState* state)
 {
 	unsigned char i;
-	IOPacketP2S_initial packet[5];
+	unsigned int j;
+	IOPacketP2S_initial packet;
 	Player * player_tmp;
 	
 	for(i=0; i<5; i++)
 	{
-		packet[i].packet_type = INITIAL_POSITION;
-		packet[i].teamid = player->team;
+		packet.packet_type = INITIAL_POSITION;
+		packet.teamid = player->team;
 		player_tmp = &(state->players[player->team][i]);
-		packet[i].xpos = player_tmp->x_pos;
-		packet[i].ypos = player_tmp->y_pos;
+		packet.xpos = player_tmp->x_pos;
+		packet.ypos = player_tmp->y_pos;
 
-		IO_send(&(player->io), (void*)(&packet[i]));
+		//xil_printf("Sending packet for player : %d \n", i);
+		IO_send(&(player->io), (void*)(&packet));
 	}
 
 	player->started = 1; //there is no bool but true/false is occpupied so TRIIICK.
