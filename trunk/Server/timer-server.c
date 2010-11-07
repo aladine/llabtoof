@@ -14,13 +14,13 @@ volatile int TimerExpired;
 void timer_a_int_handler(void * baseaddr_p)
 {
    Xuint32 csr;
-	xil_printf("Handling func \r\n");
+	//xil_printf("Handling func \r\n");
 
 	csr = XTmrCtr_GetControlStatusReg(XPAR_XPS_TIMER_1_BASEADDR, TIMER_COUNTER_1);
 	if (csr) 
 	{
 		TimerExpired++;
-		xil_printf("Controoling timer: %d \r\n", TimerExpired);
+		//xil_printf("Controoling timer: %d \r\n", TimerExpired);
 		  //controlling_update();
 	}
 	//xil_printf("TimerExpired is...%d \r\n", TimerExpired);
@@ -56,8 +56,8 @@ int Timer_Start_Count(XTmrCtr *myTimer)
 	XTmrCtr_Start(myTimer, TIMER_COUNTER_1);
 	
 	Xint32 csr;
-	print("Entering loop...\r\n");
-	
+	//print("Entering loop...\r\n");
+	/*
 	while(1)
 	{ 
 		xil_printf("Loop %d  \r\n",TimerExpired);
@@ -68,5 +68,6 @@ int Timer_Start_Count(XTmrCtr *myTimer)
 		LastTimerExpired = TimerExpired;
 
 	}
+	*/
 }
 
