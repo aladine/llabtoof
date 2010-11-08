@@ -4,39 +4,23 @@
 #include "display.h"
 #include "controlling.h"
 
-static int scoreA,foulA,scoreB,foulB;
+static int scoreA,foulA,scoreB,foulB,time;
 
-void tft_display_score(XTft *Tft,int _scoreA,int _foulA, int _scoreB, int _foulB){
-  XTft_SetPosChar(Tft, 40,420);
-  XTft_SetColor(Tft, WHITE,BLACK);
-  TftWriteString(Tft, (u8*)"TEAM A  SCORE   FOULS  " );
-  XTft_SetPosChar(Tft, 110,440);
-  XTft_SetColor(Tft, WHITE,BLACK);
-  XTft_Write(Tft,'0'+_scoreA);
-  XTft_SetPosChar(Tft, 150,440);
-  XTft_SetColor(Tft, WHITE,BLACK);
-  XTft_Write(Tft,'0'+_foulA);
-  
-  XTft_SetPosChar(Tft, 340,420);
-  XTft_SetColor(Tft, WHITE,BLACK);
-  TftWriteString(Tft, (u8*)"TEAM B  SCORE  FOULS " );
-  XTft_SetPosChar(Tft, 410,440);
-  XTft_SetColor(Tft, WHITE,BLACK);
-  XTft_Write(Tft,'0'+_scoreB);
-  XTft_SetPosChar(Tft, 450,440);
-  XTft_SetColor(Tft, WHITE,BLACK);
-  XTft_Write(Tft,'0'+_foulB);;
+/* check anything in the field*/
+int in_border(int x, int y){
+	if((x>=20) && (x<=620) && (y>=0) && (y<=400) && (x+y>=40) && (600-x+y>=0) && (600-x+400-y>=0) && (x+400-y>=40)) return 1;
+	return 0;
+  	
 }
-
 
 /*display time counting down 3 2 1*/
 void count_down(XTft *Tft,int count){
-  XTft_SetPosChar(Tft, 300,410);
+  XTft_SetPosChar(Tft, 470,420);
   XTft_SetColor(Tft, WHITE,BLACK);
-  TftWriteString(Tft, (u8*)"START...");
-    XTft_SetPosChar(Tft, 450,410);
+  TftWriteString(Tft, (u8*)"Start:");
+    XTft_SetPosChar(Tft, 530,420);
   XTft_SetColor(Tft, WHITE,BLACK);
-  XTft_Write(Tft,'0'+count);;
+  XTft_Write(Tft,'0'+count);
 }
 
 
@@ -53,7 +37,105 @@ int i,j;
 			}
 }
 
+void XTft_DrawRoundBox(XTft *Tft, int xmin, int ymin, int xmax, int ymax, unsigned int col)
+{		
+int i,j;
+		for (i=xmin+2; i<=xmax-2; i++) {
+		   XTft_SetPixel(Tft, i, ymin, col);
+		   XTft_SetPixel(Tft, i, ymax, col);
+			}
+		for (j=ymin+2; j<=ymax-2; j++) {
+		   XTft_SetPixel(Tft, xmin, j, col);
+		   XTft_SetPixel(Tft, xmax, j, col);
+			}
+		XTft_SetPixel(Tft, xmin+1, ymin+1, col);
+		XTft_SetPixel(Tft, xmax-1, ymin+1, col);
+		XTft_SetPixel(Tft, xmin+1, ymax-1, col);
+		XTft_SetPixel(Tft, xmax-1, ymax-1, col);
+}
+
+void tft_display_score(XTft *Tft,int _scoreA,int _foulA, int _scoreB, int _foulB, int time){
+ 
+	//TftWriteString(Tft, (u8*)"Time : 0" + round(time/60) + ":" + time%60 );
+	int minu,sec,minu1,minu2, sec1,sec2;
+	minu=(int) (time/60);
+	sec=time %60;
+
+  minu1=(int) (minu/10);
+  minu2=time %10;
+  sec1=(int) (sec/60);
+  sec2=sec %60;
+
+  XTft_SetPosChar(Tft, 140,420);
+  XTft_SetColor(Tft, YELLOW,BLACK);
+  TftWriteString(Tft, (u8*)"TEAM A" );
+
+  XTft_SetPosChar(Tft, 350,420);
+  XTft_SetColor(Tft, BLUE,BLACK);
+  TftWriteString(Tft, (u8*)"TEAM B" );
+  
+	XTft_SetPosChar(Tft, 150,440);
+  XTft_SetColor(Tft, WHITE,BLACK);
+  TftWriteString(Tft, (u8*)"WIN" );
+
+  XTft_SetPosChar(Tft, 360,440);
+  XTft_SetColor(Tft, WHITE,BLACK);
+  TftWriteString(Tft, (u8*)"LOSE" );
+  
+  XTft_SetPosChar(Tft, 220,420);
+  XTft_SetColor(Tft, WHITE,BLACK);
+  TftWriteString(Tft, (u8*)"Score:" );
+  
+  XTft_SetPosChar(Tft, 220,440);
+  XTft_SetColor(Tft, WHITE,BLACK);
+  TftWriteString(Tft, (u8*)"Foul:" );
+
+
+ XTft_SetPosChar(Tft, 290,420);
+  XTft_SetColor(Tft, YELLOW,BLACK);
+  XTft_Write(Tft,'0'+scoreA);
+
+  XTft_SetPosChar(Tft, 310,420);
+  XTft_SetColor(Tft, BLUE,BLACK);
+  XTft_Write(Tft,'0'+scoreB);
+
+  XTft_SetPosChar(Tft, 290,440);
+  XTft_SetColor(Tft, YELLOW,BLACK);
+  XTft_Write(Tft,'0'+foulA);
+  
+  XTft_SetPosChar(Tft, 310,440);
+  XTft_SetColor(Tft, BLUE,BLACK);
+  XTft_Write(Tft,'0'+foulB);;
+
+  XTft_SetPosChar(Tft, 470,420);
+  XTft_SetColor(Tft, WHITE,BLACK);
+  TftWriteString(Tft, (u8*)"  TIME    " );
+
+XTft_SetPosChar(Tft, 480,440);
+  XTft_SetColor(Tft, WHITE,BLACK);
+  XTft_Write(Tft,'0'+minu1);
+XTft_SetPosChar(Tft, 490,440);
+  XTft_SetColor(Tft, WHITE,BLACK);
+  XTft_Write(Tft,'0'+minu2);
+XTft_SetPosChar(Tft, 500,440);
+  XTft_SetColor(Tft, WHITE,BLACK);
+  XTft_Write(Tft,':');
+XTft_SetPosChar(Tft, 510,440);
+  XTft_SetColor(Tft, WHITE,BLACK);
+  XTft_Write(Tft,'0'+sec1);
+XTft_SetPosChar(Tft, 520,440);
+  XTft_SetColor(Tft, WHITE,BLACK);
+  XTft_Write(Tft,'0'+sec2);
+  
+XTft_DrawRoundBox(Tft,210,410,330,460,WHITE);
+XTft_DrawRoundBox(Tft,130,410,200,460,WHITE);
+XTft_DrawRoundBox(Tft,340,410,410,460,WHITE);
+XTft_DrawRoundBox(Tft,460,410,550,460,WHITE);//time
+}
+
 int Draw_Player(XTft *Tft, int x, int y,unsigned int col){
+	if (x<7) x=7;
+	if (y<7) y=7;
 	XTft_DrawBox(Tft,x-7,y-1,x+7,y+1,col);
 	XTft_DrawBox(Tft,x-6,y-3,x+6,y+3,col);
 	XTft_DrawBox(Tft,x-5,y-5,x+5,y+5,col);
@@ -66,7 +148,14 @@ int Draw_Player(XTft *Tft, int x, int y,unsigned int col){
 
 
 int Draw_Border(XTft *Tft){
-
+	//XTft_DrawSolidBox(Tft,20,0,620,400,GREEN);
+	int i,j;
+	for (i=20; i<=620; i++) {
+         for (j=0; j<=400; j++) {
+			if (in_border(i,j)==1) XTft_SetPixel(Tft, i, j, GREEN);
+         }
+      }
+	
 	TftDrawLine(Tft,20,20,20,380,WHITE);
 	TftDrawLine(Tft,40,0,600,0,WHITE);
 	TftDrawLine(Tft,620,380,620,20,WHITE);
@@ -77,19 +166,12 @@ int Draw_Border(XTft *Tft){
 	TftDrawLine(Tft,40,400,20,380,WHITE);
 	TftDrawLine(Tft,600,400,620,380,WHITE);
 	
-	TftDrawLine(Tft,320,0,320,400,WHITE);
-
-
-
-
-	XTft_DrawSolidBox(Tft,0,190,20,250,GREEN);
-	XTft_DrawSolidBox(Tft,620,190,638,250,GREEN);
-	XTft_DrawBox(Tft,20,180,70,260,RED);
-	XTft_DrawBox(Tft,570,180,620,260,RED);
+	
 }
 
 int Draw_Ball(XTft *Tft, int x, int y,unsigned int col){
-	
+	if (x<5) x=5;
+	if (y<5) y=5;
 	XTft_DrawBox(Tft,x-5,y-1,x+5,y+1,col);
 	XTft_DrawBox(Tft,x-4,y-2,x+4,y+2,col);
 	XTft_DrawBox(Tft,x-3,y-3,x+3,y+3,col);
@@ -124,34 +206,51 @@ int Draw_Circle(XTft *TftInstance,  unsigned int col){
 void tft_display_team(XTft *Tft,GameState gs,int j,int col)
 {
 	int i;
-	for (i=0;i++;i<5)
-	Draw_Player(Tft,gs.players[j][i].x_pos,gs.players[j][i].x_pos,col);
+		
+	for (i=0;i<5;i++)
+	{ 
+		//xil_printf(" ha %d %d \r\n",gs.players[j][i].x_pos,gs.players[j][i].y_pos);
+
+	Draw_Player(Tft,gs.players[j][i].x_pos,gs.players[j][i].y_pos,col);
+	}
 }
 
 void tft_displaycontrol(XTft *Tft,GameState gs)
-{
+{		
+
 	tft_display_team(Tft,gs,TEAM_A,BLUE);
 	tft_display_team(Tft,gs,TEAM_B,YELLOW);
-	Draw_Ball(Tft,gs.ball.x_pos,gs.ball.y_pos,GREEN);
+	Draw_Ball(Tft,gs.ball.x_pos,gs.ball.y_pos,WHITE);//
+
 }
 
 void tft_clear(XTft *Tft,GameState gs)
 {
-	tft_display_team(Tft,gs,TEAM_A,BLACK);
-	tft_display_team(Tft,gs,TEAM_B,BLACK);
-	Draw_Ball(Tft,gs.ball.x_pos,gs.ball.y_pos,BLACK);
+	tft_display_team(Tft,gs,TEAM_A,GREEN);
+	tft_display_team(Tft,gs,TEAM_B,GREEN);
+	Draw_Ball(Tft,gs.ball.x_pos,gs.ball.y_pos,GREEN);
 }
 
 void display_score(XTft *Tft,SpecialEvent sp)
 {
 	//GameState.game_time = sp % 0x0400;
+  time = sp % 0x0400;
   scoreA +=  sp / 0x8000;
   scoreB +=  sp / 0x4000 % 0x8000;    
   foulA  +=  sp / 0x2000 % 0x4000;        
   foulB +=  sp / 0x1000 % 0x2000; 
-  tft_display_score(Tft,scoreA,foulA,scoreB,foulB); 
+  tft_display_score(Tft,scoreA,foulA,scoreB,foulB,time); 
 }
 
+void UpdateScreen(XTft *Tft){  
+	TftDrawLine(Tft,320,0,320,400,WHITE);
+	XTft_DrawSolidBox(Tft,0,170,20,230,GREEN);
+	XTft_DrawSolidBox(Tft,620,170,638,230,GREEN);
+	XTft_DrawSolidBox(Tft,20,160,70,240,RED);
+	XTft_DrawSolidBox(Tft,570,160,620,240,RED);
+	Draw_Circle(Tft,WHITE);
+
+}
 
 void Init(XTft *TftInstance){  
 
@@ -159,8 +258,8 @@ Draw_Border(TftInstance);
 Draw_Player(TftInstance,300,300,YELLOW);
 Draw_Player(TftInstance,500,300,BLUE);
 
-Draw_Ball(TftInstance,350,350,GREEN);
-Draw_Circle(TftInstance,GREEN);
+Draw_Ball(TftInstance,350,350,RED);
+UpdateScreen(TftInstance);
 }
 
 
@@ -207,7 +306,7 @@ int XTft_DrawSolidBox(XTft *Tft, int x1, int y1, int x2, int y2, unsigned int co
          for (j=ymin; j<=ymax; j++) {
 	   XTft_SetPixel(Tft, i, j, col);
          }
-      }	   XTft_SetPixel(Tft, i, j, col);
+      }	  
       return 0;
    }
    return 1;
@@ -314,5 +413,4 @@ int XTft_DrawSolidBox(XTft *Tft, int x1, int y1, int x2, int y2, unsigned int co
 	} else {
 		return XST_FAILURE;
 	}
-
 }
